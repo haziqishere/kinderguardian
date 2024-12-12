@@ -1,4 +1,3 @@
-// src/app/(dashboard)/parent/_components/dashboard-content.tsx
 "use client";
 
 import { DashboardStats } from "./dashboard-stats";

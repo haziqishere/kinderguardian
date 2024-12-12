@@ -1,4 +1,3 @@
-// src/app/(dashboard)/parent/_components/sidebar.tsx
 "use client";
 import { Logo } from '@/components/logo';
 import { Home, Bell, FileText, Users, User, Settings } from 'lucide-react';

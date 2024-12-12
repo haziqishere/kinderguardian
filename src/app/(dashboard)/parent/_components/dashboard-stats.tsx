@@ -1,4 +1,3 @@
-// src/app/(dashboard)/parent/_components/dashboard-stats.tsx
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Bell, MessageSquareWarning} from "lucide-react";
