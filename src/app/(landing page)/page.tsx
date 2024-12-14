@@ -1,7 +1,5 @@
 import React from "react";
 
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import HeroSection from "./_component/hero";
 import CompaniesLogo from "./_component/logocarousel";
 import CallToAction from "./_component/cta";

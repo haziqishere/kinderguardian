@@ -7,11 +7,12 @@ const handler = async (data: EventSchemaType) => {
         const event = await db.event.create({
             data: {
                 title: data.title,
-                dateTime: data.dateTime,
+                dateTime: new Date(data.dateTime),
                 description: data.description,
                 location: data.location,
                 cost: data.cost,
                 requiredItems: data.requiredItems,
+                teacherInChargeName: data.teacherInChargeName,
                 teacherInChargePhone: data.teacherInChargePhone,
                 classes: {
                     create: data.classIds.map(classId => ({

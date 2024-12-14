@@ -180,6 +180,7 @@ model Event {
   location             String
   cost                 Decimal      @db.Decimal(10, 2)
   requiredItems        String?      @db.Text
+  teacherInChargeName  String?
   teacherInChargePhone String?
   classes              ClassEvent[]
   createdAt            DateTime     @default(now())
