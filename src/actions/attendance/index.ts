@@ -20,6 +20,3 @@ const handler = async (data: AttendanceSchemaType) => {
 };
 
 export const createAttendance = createSafeAction(AttendanceSchema, handler);
-
-
-

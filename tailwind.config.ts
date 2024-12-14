@@ -83,7 +83,11 @@ const config: Config = {
   					'background-position': '200%'
   				}
   			}
-  		}
+  		},
+		zIndex: {
+			popover: "50",
+			dialog: "60"
+		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

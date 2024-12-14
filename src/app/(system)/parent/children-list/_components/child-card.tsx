@@ -59,7 +59,7 @@ export const ChildCard = ({
               </DropdownMenu>
             </div>
             <Badge
-              variant={isPresent ? "default" : "secondary"}
+              variant={isPresent ? "positive" : "default"}
               className="mt-2"
             >
               {isPresent ? "At kindergarten" : "Not at kindergarten"}
