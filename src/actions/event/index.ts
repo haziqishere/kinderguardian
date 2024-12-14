@@ -12,6 +12,7 @@ const handler = async (data: EventSchemaType) => {
                 location: data.location,
                 cost: data.cost,
                 requiredItems: data.requiredItems,
+                teacherInChargeName: data.teacherInChargeName,
                 teacherInChargePhone: data.teacherInChargePhone,
                 classes: {
                     create: data.classIds.map(classId => ({
