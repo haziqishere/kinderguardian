@@ -10,6 +10,7 @@ import {
   User,
   Settings,
   LogOut,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
@@ -48,6 +49,11 @@ export const Sidebar = () => {
           label: "Reports",
           icon: <FileText className="w-5 h-5" />,
           href: `/kindergarten/${orgId}/reports`,
+        },
+        {
+          label: "Classes", // Add this new route
+          icon: <GraduationCap className="w-5 h-5" />,
+          href: `/kindergarten/${orgId}/classes`,
         },
       ],
     },
