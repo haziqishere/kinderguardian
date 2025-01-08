@@ -1,21 +1,27 @@
 "use client";
 import { useState } from "react";
 import { ClassList } from "./_components/class-list";
-import { EditClassDialog } from "./_components/edit-class-dialog";
 import { Class } from "./types";
 
-export default function ClassesPage() {
-  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+// Dummy data
+const initialClasses: Class[] = [
+  { id: "1", name: "5 Kenyala", capacity: 25, studentCount: 20 },
+  { id: "2", name: "5 Kenari", capacity: 25, studentCount: 22 },
+  { id: "3", name: "4 Mentari", capacity: 25, studentCount: 18 },
+  { id: "4", name: "4 Mutiara", capacity: 25, studentCount: 23 },
+];
 
-  const handleEdit = (class_: Class) => {
-    setSelectedClass(class_);
-    setEditDialogOpen(true);
-  };
+export default function ClassesPage() {
+  const [classes, setClasses] = useState<Class[]>(initialClasses);
 
   const handleUpdate = (updatedClass: Class) => {
-    // Update the class list with the updated class
-    // This function should be passed to ClassList and EditClassDialog
+    setClasses((prev) =>
+      prev.map((c) => (c.id === updatedClass.id ? updatedClass : c))
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    setClasses((prev) => prev.filter((c) => c.id !== id));
   };
 
   return (
@@ -23,15 +29,11 @@ export default function ClassesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Classes</h1>
       </div>
-      <ClassList onEdit={handleEdit} />
-      {selectedClass && (
-        <EditClassDialog
-          class_={selectedClass}
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onUpdate={handleUpdate}
-        />
-      )}
+      <ClassList
+        classes={classes}
+        onDelete={handleDelete}
+        onUpdate={handleUpdate}
+      />
     </div>
   );
 }

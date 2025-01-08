@@ -1,4 +1,5 @@
 "use client";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MoreVertical } from "lucide-react";
@@ -9,41 +10,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { EditClassDialog } from "./edit-class-dialog";
-import { useState } from "react";
 import { toast } from "sonner";
-
 import { Class } from "../types";
 
 interface ClassCardProps {
   class_: Class;
-  onUpdate?: (updatedClass: Class) => void;
   onDelete: (id: string) => void;
-  onEdit: (class_: Class) => void; // Add this line
 }
 
-export function ClassCard({
-  class_,
-  onUpdate,
-  onDelete,
-  onEdit,
-}: ClassCardProps) {
-  const [showEditDialog, setShowEditDialog] = useState(false);
+export function ClassCard({ class_, onDelete }: ClassCardProps) {
+  const router = useRouter();
+  const params = useParams();
 
-  const handleUpdate = (updatedClass: Class) => {
-    if (onUpdate) {
-      onUpdate(updatedClass);
-    }
-  };
   const handleDelete = () => {
-    // Add confirmation dialog
     if (window.confirm("Are you sure you want to delete this class?")) {
       onDelete(class_.id);
       toast.success("Class deleted successfully");
     }
-  };
-  const handleEditClose = (open: boolean) => {
-    setShowEditDialog(open);
   };
 
   return (
@@ -69,7 +52,13 @@ export function ClassCard({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(class_)}>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      router.push(
+                        `/kindergarten/${params.orgId}/classes/${class_.id}/edit`
+                      )
+                    }
+                  >
                     Edit Class
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -93,19 +82,8 @@ export function ClassCard({
               />
             </div>
           </div>
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" size="sm">
-              View Students
-            </Button>
-          </div>
         </div>
       </CardContent>
-      <EditClassDialog
-        class_={class_}
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        onUpdate={onUpdate}
-      />
     </Card>
   );
 }

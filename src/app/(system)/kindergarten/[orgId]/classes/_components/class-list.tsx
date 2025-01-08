@@ -11,36 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Class } from "../types";
 
-// Dummy data
-const initialClasses: Class[] = [
-  { id: "1", name: "5 Kenyala", capacity: 25, studentCount: 20 },
-  { id: "2", name: "5 Kenari", capacity: 25, studentCount: 22 },
-  { id: "3", name: "4 Mentari", capacity: 25, studentCount: 18 },
-  { id: "4", name: "4 Mutiara", capacity: 25, studentCount: 23 },
-];
+interface ClassListProps {
+  classes: Class[];
+  onDelete: (id: string) => void;
+  onUpdate: (updatedClass: Class) => void;
+}
 
-export function ClassList({ onEdit }: { onEdit: (class_: Class) => void }) {
-  const [classes, setClasses] = useState<Class[]>(initialClasses);
+export function ClassList({ classes, onDelete, onUpdate }: ClassListProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("name");
-
-  const handleDelete = async (id: string) => {
-    // Add delete action later
-    setClasses((prevClasses) => prevClasses.filter((c) => c.id !== id));
-  };
-
-  const handleAdd = (newClass: any) => {
-    setClasses((prevClasses) => [...prevClasses, newClass]);
-  };
-
-  const handleUpdate = (updatedClass: any) => {
-    setClasses((prevClasses) =>
-      prevClasses.map((c) => (c.id === updatedClass.id ? updatedClass : c))
-    );
-  };
 
   const filteredClasses = classes
     .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
@@ -72,31 +53,23 @@ export function ClassList({ onEdit }: { onEdit: (class_: Class) => void }) {
           </div>
         </div>
         <div className="flex gap-4 w-full sm:w-auto">
-          <div className="bg-white rounded-sm">
-            <Select defaultValue="name" onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="capacity">Capacity</SelectItem>
-                <SelectItem value="utilization">Utilization</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <AddClassDialog onAdd={handleAdd} />
+          <Select defaultValue="name" onValueChange={setSortBy}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="capacity">Capacity</SelectItem>
+              <SelectItem value="utilization">Utilization</SelectItem>
+            </SelectContent>
+          </Select>
+          <AddClassDialog onAdd={(newClass) => onUpdate(newClass)} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredClasses.map((class_) => (
-          <ClassCard
-            key={class_.id}
-            class_={class_}
-            onDelete={handleDelete}
-            onEdit={onEdit}
-          />
+          <ClassCard key={class_.id} class_={class_} onDelete={onDelete} />
         ))}
       </div>
     </div>
