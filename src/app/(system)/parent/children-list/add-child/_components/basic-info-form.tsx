@@ -1,5 +1,4 @@
 "use client";
-
 import {
   FormControl,
   FormField,
@@ -15,14 +14,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
-import { AddChildSchemaType } from "@/actions/student/schema";
+import { Button } from "@/components/ui/button";
+import { UseFormReturn, useFieldArray } from "react-hook-form";
+import {
+  AddChildSchemaType,
+  BasicInfoSchemaType,
+} from "@/actions/student/schema";
+import { Plus, Minus } from "lucide-react";
 
 interface BasicInfoFormProps {
   form: UseFormReturn<AddChildSchemaType>;
 }
 
 export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
+  // Use BasicInfoSchemaType for the field array since we're in basic info step
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "phoneNumbers",
+    rules: { minLength: 1 },
+  });
+
   return (
     <div className="space-y-6">
       <FormField
@@ -82,19 +93,50 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
         />
       </div>
 
-      <FormField
-        control={form.control}
-        name="phoneNumbers.0"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Parent's Phone Number</FormLabel>
-            <FormControl>
-              <Input {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* Phone Numbers Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <FormLabel>Parent's Phone Numbers</FormLabel>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append("")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Phone Number
+          </Button>
+        </div>
+
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex items-start gap-2">
+            <FormField
+              control={form.control}
+              name={`phoneNumbers.${index}`}
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <div className="flex gap-2">
+                    <FormControl className="flex-1">
+                      <Input placeholder="e.g., 0123456789" {...field} />
+                    </FormControl>
+                    {index > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => remove(index)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
