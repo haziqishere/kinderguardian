@@ -10,11 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChildSwitcherSkeleton } from "./loading-skeleton";
 
-interface Child {
+// Define interfaces for the component
+interface ChildClass {
   id: string;
   name: string;
-  class: string;
+}
+
+export interface Child {
+  id: string;
+  name: string;
+  class: ChildClass;
   imageUrl?: string;
 }
 
@@ -22,13 +29,19 @@ interface ChildSwitcherProps {
   children: Child[];
   selectedChild: Child;
   onChildChange: (childId: string) => void;
+  isLoading?: boolean;
 }
 
 export const ChildSwitcher = ({
   children,
   selectedChild,
   onChildChange,
+  isLoading = false,
 }: ChildSwitcherProps) => {
+  if (isLoading) {
+    return <ChildSwitcherSkeleton />;
+  }
+
   return (
     <Card className="mb-6">
       <CardContent className="py-3">
@@ -41,11 +54,15 @@ export const ChildSwitcher = ({
             <div>
               <h2 className="text-xl font-semibold">{selectedChild.name}</h2>
               <p className="text-sm text-muted-foreground">
-                {selectedChild.class}
+                {selectedChild.class.name}
               </p>
             </div>
           </div>
-          <Select value={selectedChild.id} onValueChange={onChildChange}>
+          <Select
+            value={selectedChild.id}
+            onValueChange={onChildChange}
+            disabled={isLoading}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Switch child" />
             </SelectTrigger>
