@@ -15,11 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { UseFormReturn, useFieldArray } from "react-hook-form";
-import {
-  AddChildSchemaType,
-  BasicInfoSchemaType,
-} from "@/actions/student/schema";
+import { UseFormReturn } from "react-hook-form";
+import { AddChildSchemaType } from "@/actions/student/schema";
 import { Plus, Minus } from "lucide-react";
 
 interface BasicInfoFormProps {
@@ -27,12 +24,20 @@ interface BasicInfoFormProps {
 }
 
 export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
-  // Use BasicInfoSchemaType for the field array since we're in basic info step
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "phoneNumbers",
-    rules: { minLength: 1 },
-  });
+  const phoneNumbers = form.watch("phoneNumbers");
+
+  const addPhoneNumber = () => {
+    const currentPhoneNumbers = form.getValues("phoneNumbers");
+    form.setValue("phoneNumbers", [...currentPhoneNumbers, ""]);
+  };
+
+  const removePhoneNumber = (index: number) => {
+    const currentPhoneNumbers = form.getValues("phoneNumbers");
+    form.setValue(
+      "phoneNumbers",
+      currentPhoneNumbers.filter((_, i) => i !== index)
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -101,15 +106,15 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => append("")}
+            onClick={addPhoneNumber}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Phone Number
           </Button>
         </div>
 
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex items-start gap-2">
+        {phoneNumbers.map((_, index) => (
+          <div key={index} className="flex items-start gap-2">
             <FormField
               control={form.control}
               name={`phoneNumbers.${index}`}
@@ -124,7 +129,7 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => remove(index)}
+                        onClick={() => removePhoneNumber(index)}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
