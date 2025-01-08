@@ -1,14 +1,14 @@
 import {z} from "zod";
 
+const phoneNumberSchema = z.string().regex(/^01\d{8,9}$/, "Invalid Malaysian phone number format");
+
 // Sub-schemas for each step
 export const basicInfoSchema = z.object({
     fullName: z.string().min(1, "Full name is required"),
-    age: z.number().min(0).max(12, "Age must be between 0 and 12"),
+    age: z.number().min(1).max(6, "Age must be between 0 and 12"),
     classId: z.string().min(1, "Class is required"),
     parentId: z.string().min(1, "Parent information is required"),
-    phoneNumbers: z.array(
-        z.string().regex(/^01\d{8,9}$/, "Invalid Malaysian phone number format")
-    ).min(1, "At least one phone number is required"),
+    phoneNumbers: z.array(phoneNumberSchema).min(1, "At least one phone number is required"),
 });
 
 export const faceImageSchema = z.object({
