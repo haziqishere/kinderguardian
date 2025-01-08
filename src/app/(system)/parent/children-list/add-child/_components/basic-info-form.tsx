@@ -30,7 +30,7 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
         name="fullName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Full Name</FormLabel>
+            <FormLabel>Full Name (as per IC)</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>
