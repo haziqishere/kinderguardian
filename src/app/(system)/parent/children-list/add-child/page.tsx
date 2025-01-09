@@ -75,16 +75,22 @@ export default function AddChildPage() {
   });
 
   const form = useForm<AddChildSchemaType>({
-    resolver: zodResolver(
-      step === STEPS.CONSENT ? AddChildSchema : basicInfoSchema
-    ),
+    resolver: zodResolver(AddChildSchema),
     defaultValues: {
       fullName: "",
       age: 0,
       classId: "",
+      parentId: "test-parent-id",
       phoneNumbers: [""],
       consent: false,
       dataPermission: false,
+      faceImages: {
+        front: "",
+        left: "",
+        right: "",
+        tiltUp: "",
+        tiltDown: "",
+      },
     },
   });
 
@@ -133,11 +139,27 @@ export default function AddChildPage() {
   };
 
   const onSubmit = async (data: AddChildSchemaType) => {
-    const formData = {
-      ...data,
-      ...photos,
-    };
-    execute(formData);
+    try {
+      // Log the form data
+      console.log("Form Data:", {
+        ...data,
+        faceImages: photos,
+      });
+
+      // For testing, we'll just show a success message
+      toast.success("Form submitted successfully (test)");
+      console.log("Photos:", photos);
+
+      // Commented out for testing
+      // const formData = {
+      //   ...data,
+      //   ...photos,
+      // };
+      // execute(formData);
+    } catch (error) {
+      console.error("Submit Error:", error);
+      toast.error("Failed to submit form");
+    }
   };
 
   const renderCurrentStep = () => {

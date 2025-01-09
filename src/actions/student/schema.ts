@@ -18,20 +18,18 @@ export const faceImageSchema = z.object({
         right: z.string().optional(),
         tiltUp: z.string().optional(),
         tiltDown: z.string().optional()
-    })
-})
+    }).optional()
+});
 
 export const consentSchema = z.object({
-    consent: z.boolean().refine((val) => val === true, {
-        message: "You must accept the terms and conditions",
-    }),
-    dataPermission: z.boolean().refine((val) => val === true, {
-        message: "You must give permission to use the data"
-    }),
+    consent: z.boolean(),
+    dataPermission: z.boolean()
 });
 
 // Combined schema for the entire form
-export const AddChildSchema = basicInfoSchema.merge(faceImageSchema).merge(consentSchema);
+export const AddChildSchema = basicInfoSchema
+    .merge(faceImageSchema)
+    .merge(consentSchema);
 
 
 export type AddChildSchemaType = z.infer<typeof AddChildSchema>;
