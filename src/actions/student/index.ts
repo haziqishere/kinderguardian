@@ -8,15 +8,15 @@ const handler = async (data: AddChildSchemaType) => {
     try {
         // First upload all images to S3
         const imageKeys = {
-            front: data.faceImages.front ? 
+            front: data.faceImages?.front ? 
                 await uploadStudentImage(data.parentId, data.faceImages.front, 'front') : undefined,
-            left: data.faceImages.left ?
+            left: data.faceImages?.left ?
                 await uploadStudentImage(data.parentId, data.faceImages.left, 'left') : undefined,
-            right: data.faceImages.right ?
+            right: data.faceImages?.right ?
                 await uploadStudentImage(data.parentId, data.faceImages.right, 'right') : undefined,
-            tiltUp: data.faceImages.tiltUp ?
+            tiltUp: data.faceImages?.tiltUp ?
                 await uploadStudentImage(data.parentId, data.faceImages.tiltUp, 'tiltUp') : undefined,
-            tiltDown: data.faceImages.tiltDown ?
+            tiltDown: data.faceImages?.tiltDown ?
                 await uploadStudentImage(data.parentId, data.faceImages.tiltDown, 'tiltDown') : undefined,
         };
 
