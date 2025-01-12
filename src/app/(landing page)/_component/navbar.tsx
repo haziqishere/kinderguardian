@@ -10,7 +10,7 @@ const NavBar = () => {
     <div className="flex justify-between items-center p-4 bg-white drop-shadow-sm">
       <Logo />
       <Button size="lg" asChild>
-        <Link href="/dashboard">Get Started!</Link>
+        <Link href="/sign-in">Get Started!</Link>
       </Button>
     </div>
   );
