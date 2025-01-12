@@ -1,0 +1,409 @@
+# Firebase Authentication Changes
+
+## 1. Environment Variables (.env)
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Firebase Admin SDK
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_CLIENT_EMAIL=your_client_email
+FIREBASE_PRIVATE_KEY=your_private_key
+```
+
+## 2. Firebase Client Setup (src/lib/firebase.ts)
+```typescript
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+export const auth = getAuth(app);
+```
+
+## 3. Firebase Admin Setup (src/lib/firebase-admin.ts)
+```typescript
+import { getApp, getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+export const adminAuth = getAuth();
+```
+
+## 4. Authentication Schemas (src/actions/auth/schema.ts)
+```typescript
+import { z } from "zod";
+
+export const LoginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const RegisterSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  userType: z.enum(["parent", "kindergarten"]),
+  kindergartenName: z.string().optional(),
+  address: z.string().optional(),
+});
+
+export type LoginSchemaType = z.infer<typeof LoginSchema>;
+export type RegisterSchemaType = z.infer<typeof RegisterSchema>;
+```
+
+## 5. Sign In Page (src/app/(auth)/sign-in/page.tsx)
+```typescript
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { LoginSchema } from "@/actions/auth/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+export default function SignInPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [userType, setUserType] = useState<"parent" | "kindergarten">("parent");
+
+  const form = useForm({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+
+      // Get user type and details from your database
+      const response = await fetch("/api/auth/user-type", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firebaseId: userCredential.user.uid,
+        }),
+      });
+
+      const { userType, kindergartenName } = await response.json();
+
+      // Redirect based on user type
+      if (userType === "parent") {
+        router.push("/parent");
+      } else {
+        router.push(`/kindergarten/${kindergartenName}/dashboard`);
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      // Handle error (show toast, etc.)
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+      <Card className="w-[400px]">
+        <CardHeader>
+          <CardTitle>Sign In</CardTitle>
+          <CardDescription>
+            Choose your account type and sign in to your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs
+            defaultValue="parent"
+            className="w-full"
+            onValueChange={(value) =>
+              setUserType(value as "parent" | "kindergarten")
+            }
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="parent">Parent</TabsTrigger>
+              <TabsTrigger value="kindergarten">Kindergarten</TabsTrigger>
+            </TabsList>
+            <TabsContent value="parent">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <Input
+                  {...form.register("email")}
+                  placeholder="Email"
+                  type="email"
+                />
+                <Input
+                  {...form.register("password")}
+                  placeholder="Password"
+                  type="password"
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  Sign In as Parent
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="kindergarten">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <Input
+                  {...form.register("email")}
+                  placeholder="Email"
+                  type="email"
+                />
+                <Input
+                  {...form.register("password")}
+                  placeholder="Password"
+                  type="password"
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  Sign In as Kindergarten
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+## 6. Registration API (src/app/api/auth/register/route.ts)
+```typescript
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { adminAuth } from "@/lib/firebase-admin";
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { firebaseId, email, name, userType, kindergartenName, address } = body;
+
+    // Verify the Firebase token
+    const user = await adminAuth.getUser(firebaseId);
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    if (userType === "parent") {
+      // Create parent record
+      const parent = await db.parent.create({
+        data: {
+          firebaseId,
+          email,
+          name,
+        },
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        user: parent 
+      });
+
+    } else {
+      // Create kindergarten and admin record
+      const kindergarten = await db.kindergarten.create({
+        data: {
+          name: kindergartenName!,
+          address: address!,
+          messageAlertThreshold: new Date("1970-01-01T09:00:00"), // Default 9 AM
+          callAlertThreshold: new Date("1970-01-01T10:00:00"), // Default 10 AM
+          admins: {
+            create: {
+              firebaseId,
+              email,
+              name,
+              role: "SUPER_ADMIN",
+            },
+          },
+        },
+        include: {
+          admins: true,
+        },
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        kindergarten 
+      });
+    }
+
+  } catch (error) {
+    console.error("Registration error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## 7. User Type Check API (src/app/api/auth/user-type/route.ts)
+```typescript
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+export async function POST(req: Request) {
+  try {
+    const { firebaseId } = await req.json();
+
+    // Check if user is a parent
+    const parent = await db.parent.findUnique({
+      where: { firebaseId },
+    });
+
+    if (parent) {
+      return NextResponse.json({
+        userType: "parent",
+      });
+    }
+
+    // Check if user is an admin
+    const admin = await db.admin.findUnique({
+      where: { firebaseId },
+      include: {
+        kindergarten: true,
+      },
+    });
+
+    if (admin) {
+      return NextResponse.json({
+        userType: "kindergarten",
+        kindergartenName: admin.kindergarten.name,
+      });
+    }
+
+    return NextResponse.json(
+      { error: "User not found" },
+      { status: 404 }
+    );
+
+  } catch (error) {
+    console.error("User type check error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## 8. Middleware (src/middleware.ts)
+```typescript
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { adminAuth } from "@/lib/firebase-admin";
+
+export async function middleware(request: NextRequest) {
+  const session = request.cookies.get("session")?.value || "";
+
+  // Verify session cookie
+  if (!session) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
+  }
+
+  try {
+    const decodedClaims = await adminAuth.verifySessionCookie(session, true);
+    
+    // Check user role for protected routes
+    if (request.nextUrl.pathname.startsWith("/kindergarten")) {
+      const admin = await prisma?.admin.findUnique({
+        where: { firebaseId: decodedClaims.uid },
+      });
+      
+      if (!admin) {
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
+      }
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
+  }
+}
+
+export const config = {
+  matcher: [
+    "/parent/:path*",
+    "/kindergarten/:path*",
+  ],
+};
+```
+
+## 9. Prisma Schema Changes (prisma/schema.prisma)
+```prisma
+model Parent {
+  id         String    @id @default(uuid())
+  firebaseId String    @unique
+  email      String    @unique
+  name       String
+  students   Student[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([firebaseId])
+}
+
+model Admin {
+  id             String       @id @default(uuid())
+  firebaseId     String       @unique
+  email          String       @unique
+  name           String
+  role           AdminRole
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
+  kindergartenId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([kindergartenId])
+  @@index([firebaseId])
+}
+```

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { adminAuth } from "@/lib/firebase-admin";
+import { adminAuth, isAdminAuthInitialized } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
   try {
+    if (!isAdminAuthInitialized(adminAuth)) {
+      return NextResponse.json(
+        { error: "Auth not initialized" }, 
+        { status: 500 }
+      );
+    }
+
     const body = await req.json();
     const { firebaseId, email, name, userType, kindergartenName, address } = body;
 
@@ -66,4 +73,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-} 
+}
