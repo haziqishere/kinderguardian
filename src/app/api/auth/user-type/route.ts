@@ -24,17 +24,20 @@ export async function POST(req: Request) {
       where: { firebaseId },
       include: {
         kindergarten: {
-          select: {
-            name: true,
-          },
-        },
-      },
+          select: { name: true }
+        }
+      }
     });
 
-    if (admin) {
+    if (admin && admin.kindergarten) {
       return NextResponse.json({
         userType: "kindergarten",
         kindergartenName: admin.kindergarten.name,
+      });
+    } else if (admin) {
+      return NextResponse.json({
+        userType: "kindergarten",
+        kindergartenName: null,
       });
     }
 

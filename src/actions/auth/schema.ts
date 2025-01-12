@@ -19,4 +19,16 @@ export const LoginSchema = z.object({
 export type LoginSchemaType = z.infer<typeof LoginSchema>;
 
 // Common Types
-export type UserType = "parent" | "kindergarten"; 
+export type UserType = "parent" | "kindergarten";
+
+export type SignUpReturnType = {
+  userType: UserType;
+  kindergartenName?: string;
+  email: string;
+  name: string;
+};
+
+export type LoginReturnType = {
+  userType: UserType;
+  kindergartenName?: string;
+}; 

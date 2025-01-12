@@ -45,8 +45,11 @@ export default function SignInPage() {
       // Redirect based on user type
       if (result.data?.userType === "parent") {
         router.push("/parent/children-list");
-      } else {
-        router.push("/kindergarten/dashboard");
+      } else if (
+        result.data?.userType === "kindergarten" &&
+        result.data?.kindergartenName
+      ) {
+        router.push(`/kindergarten/${result.data.kindergartenName}/dashboard`);
       }
     } catch (error) {
       toast.error("Something went wrong");
