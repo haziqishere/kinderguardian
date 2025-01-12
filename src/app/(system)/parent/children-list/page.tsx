@@ -1,18 +1,9 @@
 // @/app/parent/children-list/page.tsx
 import { ChildCard } from "./_components/child-card";
 import { AddChildCard } from "./_components/add-child-card";
-// TODO: Add clerk functionalities
-// import { useAuth } from "@clerk/nextjs";
-// import { db } from "@/lib/db";
+import { db } from "@/lib/db";
 
 const ChildrenListPage = async () => {
-  // TODO: Add clerk functionalities
-  // const { userId } = useAuth();
-  // if (!userId) {
-  //   // Handle the case where userId is null or undefined
-  //   return <div>Error: User not authenticated</div>;
-  // }
-
   // Mock data for children
   const children = [
     {
