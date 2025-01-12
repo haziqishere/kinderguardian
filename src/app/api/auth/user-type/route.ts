@@ -1,9 +1,14 @@
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { firebaseId } = await req.json();
+    const body = await req.json();
+    const { firebaseId } = body;
+
+    if (!firebaseId) {
+      return new NextResponse("Firebase ID is required", { status: 400 });
+    }
 
     // Check if user is a parent
     const parent = await db.parent.findUnique({
@@ -11,16 +16,18 @@ export async function POST(req: Request) {
     });
 
     if (parent) {
-      return NextResponse.json({
-        userType: "parent",
-      });
+      return NextResponse.json({ userType: "parent" });
     }
 
     // Check if user is an admin
     const admin = await db.admin.findUnique({
       where: { firebaseId },
       include: {
-        kindergarten: true,
+        kindergarten: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -31,16 +38,9 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json(
-      { error: "User not found" },
-      { status: 404 }
-    );
-
+    return new NextResponse("User not found", { status: 404 });
   } catch (error) {
-    console.error("User type check error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("[USER_TYPE]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 } 
