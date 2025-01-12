@@ -5,8 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RegisterSchema } from "@/actions/auth/schema";
-import { signUp } from "@/actions/auth/sign-up";
+import {
+  SignUpSchema,
+  SignUpSchemaType,
+  UserType,
+} from "@/actions/auth/schema";
+import { signUp, checkUser } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,38 +22,22 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useSignUpForm } from "@/hooks/useSignUpForm";
 
 export default function SignUpPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [userType, setUserType] = useState<"parent" | "kindergarten">("parent");
+  const [userType, setUserType] = useState<UserType>("parent");
 
-  const form = useForm({
-    resolver: zodResolver(RegisterSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      name: "",
-      userType: "parent" as const,
-    },
-  });
+  const form = useSignUpForm();
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: SignUpSchemaType) => {
     try {
       setIsLoading(true);
 
-      // Check if user already exists
-      const checkResponse = await fetch("/api/auth/user-type", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: data.email,
-        }),
-      });
-
-      if (checkResponse.ok) {
+      // Check if user exists
+      const checkResult = await checkUser({ email: data.email });
+      if (checkResult.error) {
         toast.error("User already exists. Please sign in instead.");
         router.push("/sign-in");
         return;
@@ -89,8 +77,10 @@ export default function SignUpPage() {
             defaultValue="parent"
             className="w-full"
             onValueChange={(value) => {
-              setUserType(value as "parent" | "kindergarten");
+              const newUserType = value as UserType;
+              setUserType(newUserType);
               form.reset();
+              form.setValue("userType", newUserType);
             }}
           >
             <TabsList className="grid w-full grid-cols-2">
