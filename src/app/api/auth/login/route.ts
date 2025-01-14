@@ -1,51 +1,40 @@
+// src/app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { adminAuth } from "@/lib/firebase-admin";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-export async function POST(req: Request) {
-  console.log("Login API endpoint called");
+export async function POST(request: Request) {
+  console.log("Login API route hit");
   
   try {
-    const body = await req.json();
-    console.log("Received request body:", body);
-    
-    const { firebaseId } = body;
+    const { firebaseId } = await request.json();
+    console.log("Received firebaseId:", firebaseId);
 
-    if (!firebaseId) {
-      console.error("Missing firebaseId in request");
-      return new NextResponse(
-        JSON.stringify({ error: "Firebase ID is required" }),
-        {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+    // First verify Firebase user exists
+    try {
+      const firebaseUser = await adminAuth.getUser(firebaseId);
+      console.log("Firebase user verified successfully:", firebaseUser);
+    } catch (error:any) {
+      console.error("Firebase verification failed:", error);
+      return NextResponse.json(
+        { error: "Invalid Firebase user" },
+        { status: 401 }
       );
     }
 
-    console.log("Looking up user with firebaseId:", firebaseId);
-
-    // Check if user exists in our database
+    // Check for parent account
     const parent = await db.parent.findUnique({
       where: { firebaseId },
     });
 
     if (parent) {
-      console.log("Found parent user:", parent.id);
-      return new NextResponse(
-        JSON.stringify({ userType: "parent" }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      return NextResponse.json({
+        userType: "parent",
+        userId: parent.id
+      });
     }
 
+    // Check for admin account
     const admin = await db.admin.findUnique({
       where: { firebaseId },
       include: {
@@ -56,44 +45,29 @@ export async function POST(req: Request) {
     });
 
     if (admin) {
-      console.log("Found admin user:", admin.id);
-      return new NextResponse(
-        JSON.stringify({
-          userType: "kindergarten",
-          kindergartenName: admin.kindergarten?.name
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      return NextResponse.json({
+        userType: "kindergarten",
+        userId: admin.id,
+        kindergartenName: admin.kindergarten?.name
+      });
     }
 
-    console.log("No user found with firebaseId:", firebaseId);
-    return new NextResponse(
-      JSON.stringify({ error: "User not found in database" }),
-      {
-        status: 404,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+    // If user exists in Firebase but not in database, 
+    // we should create them or redirect to complete registration
+    const firebaseUser = await adminAuth.getUser(firebaseId);
+    return NextResponse.json(
+      { 
+        error: "User needs to complete registration",
+        email: firebaseUser.email
+      },
+      { status: 403 }
     );
+
   } catch (error) {
     console.error("Login API error:", error);
-    return new NextResponse(
-      JSON.stringify({
-        error: "Internal server error",
-        details: (error as Error).message
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
-} 
+}

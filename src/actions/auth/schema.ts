@@ -12,8 +12,8 @@ export type SignUpSchemaType = z.infer<typeof SignUpSchema>;
 
 // Login
 export const LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export type LoginSchemaType = z.infer<typeof LoginSchema>;

@@ -5,6 +5,11 @@ export async function middleware(request: NextRequest) {
   // Get the pathname of the request
   const path = request.nextUrl.pathname;
 
+  // Skip middleware for API routes
+  if (path.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   // Define public routes that don't need authentication
   const isPublicRoute = ["/", "/sign-in", "/sign-up"].includes(path);
 
@@ -89,6 +94,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public (public files)
      */
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
   ],
 };

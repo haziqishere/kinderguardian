@@ -1,10 +1,11 @@
 "use client";
 
+import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginSchema } from "@/actions/auth/schema";
+import { LoginSchema, LoginSchemaType } from "@/actions/auth/schema";
 import { login } from "@/actions/auth/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ export default function SignInPage() {
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: LoginSchemaType) => {
     try {
       setIsLoading(true);
 
@@ -37,6 +38,11 @@ export default function SignInPage() {
 
       if (result.error) {
         toast.error(result.error);
+
+        // Check if we need to redirect to complete registration
+        if (result.redirect) {
+          router.push(result.redirect);
+        }
         return;
       }
 
@@ -44,12 +50,12 @@ export default function SignInPage() {
 
       // Redirect based on user type
       if (result.data?.userType === "parent") {
-        router.push("/parent/children-list");
-      } else if (
-        result.data?.userType === "kindergarten" &&
-        result.data?.kindergartenName
-      ) {
-        router.push(`/kindergarten/${result.data.kindergartenName}/dashboard`);
+        router.push("/parent");
+      } else if (result.data?.userType === "kindergarten") {
+        const route = result.data?.kindergartenName
+          ? `/kindergarten/${result.data.kindergartenName}/dashboard`
+          : "/kindergarten/setup";
+        router.push(route);
       }
     } catch (error) {
       toast.error("Something went wrong");
