@@ -2,7 +2,6 @@
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { LoginSchemaType } from "./schema";
-import { useRouter } from "next/navigation";
 
 export const login = async (data: LoginSchemaType) => {
   try {
@@ -25,23 +24,13 @@ export const login = async (data: LoginSchemaType) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ firebaseId }),
-      cache: 'no-store'
     });
 
     console.log("API Response Status:", response.status);
-    
     const responseData = await response.json();
 
-    if (response.status === 403) {
-      // User needs to complete registration
-      return { 
-        error: "Please complete your registration",
-        redirect: "/complete-registration"
-      };
-    }
-
     if (!response.ok) {
-      throw new Error(responseData.error || "Failed to validate login");
+      throw new Error(responseData.error || "Failed to login");
     }
 
     return { data: responseData };

@@ -1,7 +1,6 @@
 // src/app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { adminAuth } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
   console.log("Login API route hit");
@@ -10,31 +9,22 @@ export async function POST(request: Request) {
     const { firebaseId } = await request.json();
     console.log("Received firebaseId:", firebaseId);
 
-    // First verify Firebase user exists
-    try {
-      const firebaseUser = await adminAuth.getUser(firebaseId);
-      console.log("Firebase user verified successfully:", firebaseUser);
-    } catch (error:any) {
-      console.error("Firebase verification failed:", error);
-      return NextResponse.json(
-        { error: "Invalid Firebase user" },
-        { status: 401 }
-      );
-    }
-
-    // Check for parent account
+    // Skip Firebase verification and check database directly
+    // First check for parent
     const parent = await db.parent.findUnique({
       where: { firebaseId },
     });
 
     if (parent) {
-      return NextResponse.json({
+      console.log("Found parent user:", parent);
+      return NextResponse.json({ 
+        success: true,
         userType: "parent",
-        userId: parent.id
+        userId: parent.id 
       });
     }
 
-    // Check for admin account
+    // Then check for admin
     const admin = await db.admin.findUnique({
       where: { firebaseId },
       include: {
@@ -45,22 +35,19 @@ export async function POST(request: Request) {
     });
 
     if (admin) {
+      console.log("Found admin user:", admin);
       return NextResponse.json({
+        success: true,
         userType: "kindergarten",
         userId: admin.id,
         kindergartenName: admin.kindergarten?.name
       });
     }
 
-    // If user exists in Firebase but not in database, 
-    // we should create them or redirect to complete registration
-    const firebaseUser = await adminAuth.getUser(firebaseId);
+    console.log("No user found in database for firebaseId:", firebaseId);
     return NextResponse.json(
-      { 
-        error: "User needs to complete registration",
-        email: firebaseUser.email
-      },
-      { status: 403 }
+      { error: "User not found in database" },
+      { status: 404 }
     );
 
   } catch (error) {
