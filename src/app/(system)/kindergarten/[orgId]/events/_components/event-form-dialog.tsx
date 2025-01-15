@@ -1,12 +1,15 @@
 // src/app/kindergarten/[orgId]/events/_components/event-form-dialog.tsx
 "use client";
+
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { EventSchema, EventSchemaType } from "@/actions/event/schema";
 import { createEvent } from "@/actions/event";
 import { toast } from "sonner";
+import { UserType } from "@prisma/client";
 
 import {
   Dialog,
@@ -27,23 +30,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MultiSelect } from "./multi-select";
+
 interface EventFormDialogProps {
   classes: { id: string; name: string }[];
 }
 
-const dummyClasses = [
-  { id: "1", name: "5 Kenyala" },
-  { id: "2", name: "5 Kenari" },
-  { id: "3", name: "4 Mentari" },
-  { id: "4", name: "4 Mutiara" },
-];
-
-const classOptions = dummyClasses.map((c) => ({
-  value: c.id,
-  label: c.name,
-}));
-
 export function EventFormDialog({ classes }: EventFormDialogProps) {
+  const { orgId } = useParams();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -53,12 +46,12 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
       title: "",
       description: "",
       location: "",
-      cost: 0,
-      teacherInChargeName: "",
-      teacherInChargePhone: "",
-      requiredItems: "",
-      classIds: [],
-      dateTime: new Date(),
+      type: "ACTIVITY",
+      targetAudience: ["ALL"],
+      startDate: new Date(),
+      endDate: new Date(),
+      isAllDay: false,
+      kindergartenId: orgId as string,
     },
   });
 
@@ -96,7 +89,7 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
             <FormField
               control={form.control}
               name="title"
-              render={({ field }: { field: any }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
@@ -109,21 +102,19 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="dateTime"
+                name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>Start Date</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
-                        {...field}
                         value={
                           field.value ? format(field.value, "yyyy-MM-dd") : ""
                         }
-                        onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
-                        }}
+                        onChange={(e) =>
+                          field.onChange(new Date(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -132,12 +123,20 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
               />
               <FormField
                 control={form.control}
-                name="location"
+                name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>End Date</FormLabel>
                     <FormControl>
-                      <Input placeholder="Event location" {...field} />
+                      <Input
+                        type="date"
+                        value={
+                          field.value ? format(field.value, "yyyy-MM-dd") : ""
+                        }
+                        onChange={(e) =>
+                          field.onChange(new Date(e.target.value))
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -162,81 +161,36 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="teacherInChargeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teacher Name (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Name of teacher in charge"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cost (RM)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        value={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+
             <FormField
               control={form.control}
-              name="teacherInChargePhone"
+              name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teacher Phone (Optional)</FormLabel>
+                  <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contact number" {...field} />
+                    <Input placeholder="Event location" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="requiredItems"
+              name="targetAudience"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Required Items</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Items students need to bring"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="classIds"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Select Classes</FormLabel>
+                  <FormLabel>Target Audience</FormLabel>
                   <FormControl>
                     <MultiSelect
-                      options={classOptions}
-                      selected={field.value || []}
+                      options={[
+                        { value: "ALL", label: "All" },
+                        { value: "PARENT", label: "Parents" },
+                        { value: "TEACHER", label: "Teachers" },
+                        { value: "STUDENT", label: "Students" },
+                      ]}
+                      selected={field.value}
                       onChange={field.onChange}
                     />
                   </FormControl>
@@ -244,6 +198,7 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
                 </FormItem>
               )}
             />
+
             <div className="flex justify-end space-x-4">
               <Button
                 variant="outline"

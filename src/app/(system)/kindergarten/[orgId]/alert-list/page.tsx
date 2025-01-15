@@ -1,45 +1,74 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { AlertList } from "../_components/alert-list";
+import { getAlerts } from "@/actions/alert";
+import { Alert, AlertType } from "@prisma/client";
 
-export default async function AlertListPage() {
-  const respondedData = [
-    {
-      id: "1",
-      name: "Haris Azhari bin Zaharudin",
-      class: "5 Kenyala",
-      attendancePerformance: "99.5%",
-      parentAction: "Responded" as const,
-      alertStatus: "Messaged" as const,
-      reason: "Sick",
-    },
-    {
-      id: "2",
-      name: "Irfan bin Abdul Ghafar",
-      class: "4 Mentari",
-      attendancePerformance: "99.5%",
-      parentAction: "Responded" as const,
-      alertStatus: "Messaged" as const,
-      reason: "Going back to hometown",
-    },
-  ];
+type AlertStatus = "Messaged" | "Called";
 
-  const awaitingData = [
-    {
-      id: "3",
-      name: "Muhammad Hakim bin Zulkhainan",
-      class: "5 Kenari",
-      attendancePerformance: "99.5%",
-      parentAction: "No Response" as const,
-      alertStatus: "Called" as const,
-    },
-    {
-      id: "4",
-      name: "Nandaprian Rajasekaran",
-      class: "5 Kenanga",
-      attendancePerformance: "99.5%",
-      parentAction: "No Response" as const,
-      alertStatus: "Called" as const,
-    },
-  ];
+interface AlertStudent {
+  id: string;
+  name: string;
+  class: string;
+  attendancePerformance: string;
+  parentAction: "Responded" | "No Response";
+  alertStatus: AlertStatus;
+  reason?: string;
+}
+
+export default function AlertListPage() {
+  const { orgId } = useParams();
+  const [respondedData, setRespondedData] = useState<AlertStudent[]>([]);
+  const [awaitingData, setAwaitingData] = useState<AlertStudent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const result = await getAlerts(orgId as string, "ADMIN");
+        if (result.data) {
+          // For now, we'll use the alert title as the student name and message as reason
+          const responded = result.data
+            .filter((alert) => alert.isRead)
+            .map((alert) => ({
+              id: alert.id,
+              name: alert.title,
+              class: "N/A", // We'll need to add this to the alert model
+              attendancePerformance: "99.5%", // TODO: Calculate from attendance data
+              parentAction: "Responded" as const,
+              alertStatus: "Messaged" as AlertStatus,
+              reason: alert.message,
+            }));
+
+          const awaiting = result.data
+            .filter((alert) => !alert.isRead)
+            .map((alert) => ({
+              id: alert.id,
+              name: alert.title,
+              class: "N/A", // We'll need to add this to the alert model
+              attendancePerformance: "99.5%", // TODO: Calculate from attendance data
+              parentAction: "No Response" as const,
+              alertStatus: "Called" as AlertStatus,
+            }));
+
+          setRespondedData(responded);
+          setAwaitingData(awaiting);
+        }
+      } catch (error) {
+        console.error("Error fetching alerts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlerts();
+  }, [orgId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <AlertList respondedData={respondedData} awaitingData={awaitingData} />

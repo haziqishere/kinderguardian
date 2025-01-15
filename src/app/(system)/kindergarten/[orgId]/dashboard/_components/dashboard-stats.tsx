@@ -1,16 +1,84 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { GraduationCap, Clock, Users, AlertTriangle } from "lucide-react";
+import { getDashboardStats } from "@/actions/dashboard";
 
-const totalStudents = 104;
-const lateStudents = 4;
-const attendingStudents = "93%";
-const absentNoReason = 2;
+interface ClassUtilization {
+  id: string;
+  name: string;
+  capacity: number;
+  studentCount: number;
+  utilizationRate: number;
+}
+
+interface DashboardStatsData {
+  totalStudents: number;
+  totalClasses: number;
+  overallUtilization: number;
+  upcomingEvents: {
+    attendees: {
+      name: string;
+      id: string;
+      type: string;
+      createdAt: Date;
+      updatedAt: Date;
+      status: string;
+      eventId: string;
+    }[];
+  }[];
+  unreadAlerts: any[];
+  classUtilization: {
+    id: string;
+    name: string;
+    capacity: number;
+    studentCount: number;
+    utilizationRate: number;
+  }[];
+}
 
 export const DashboardStats = () => {
+  const { orgId } = useParams();
+  const [stats, setStats] = useState<DashboardStatsData>({
+    totalStudents: 0,
+    totalClasses: 0,
+    overallUtilization: 0,
+    upcomingEvents: [],
+    unreadAlerts: [],
+    classUtilization: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const result = await getDashboardStats(orgId as string);
+        if (result.data) {
+          setStats(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [orgId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // Calculate attendance metrics
+  const lateStudents = Math.round(stats.totalStudents * 0.05); // Example calculation
+  const attendingPercentage = Math.round(stats.overallUtilization * 100);
+  const absentNoReason = stats.unreadAlerts.length; // Using unread alerts as proxy for now
+
   return (
     <div className="grid grid-cols-2 gap-4">
-      {/* Changed to 2x2 grid */}
       <Card className="bg-white w-60">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
@@ -19,7 +87,7 @@ export const DashboardStats = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Students</p>
-              <p className="text-2xl font-bold">{totalStudents}</p>
+              <p className="text-2xl font-bold">{stats.totalStudents}</p>
             </div>
           </div>
         </CardContent>
@@ -47,7 +115,7 @@ export const DashboardStats = () => {
               <p className="text-sm text-muted-foreground">
                 Attending Students
               </p>
-              <p className="text-2xl font-bold">{attendingStudents}</p>
+              <p className="text-2xl font-bold">{attendingPercentage}%</p>
             </div>
           </div>
         </CardContent>

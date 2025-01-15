@@ -1,4 +1,7 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ResponsiveContainer,
@@ -9,18 +12,51 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { getAttendanceStats } from "@/actions/dashboard";
 
-const data = [
-  { month: "Jan", value: 85 },
-  { month: "Feb", value: 90 },
-  { month: "Mar", value: 88 },
-  { month: "Apr", value: 92 },
-  { month: "May", value: 89 },
-  { month: "Jun", value: 91 },
-  { month: "Jul", value: 90 },
-];
+interface AttendanceData {
+  month: string;
+  value: number;
+}
+
+interface AttendanceStats {
+  date: Date;
+  attendanceRate: number;
+}
 
 export const AttendanceChart = () => {
+  const { orgId } = useParams();
+  const [data, setData] = useState<AttendanceData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAttendanceStats = async () => {
+      try {
+        const result = await getAttendanceStats(orgId as string);
+        if (result.data) {
+          // Transform the data into the format we need
+          const chartData = result.data.map((stat: AttendanceStats) => ({
+            month: new Date(stat.date).toLocaleString("default", {
+              month: "short",
+            }),
+            value: Math.round(stat.attendanceRate * 100),
+          }));
+          setData(chartData);
+        }
+      } catch (error) {
+        console.error("Error fetching attendance stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendanceStats();
+  }, [orgId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Card>
       <CardContent className="pt-6">

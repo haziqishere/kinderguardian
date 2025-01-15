@@ -1,21 +1,27 @@
 import { db } from "@/lib/db";
 import { AlertSchema, AlertSchemaType } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
+import { UserType } from "@prisma/client";
 
 // Get all alerts for a kindergarten
-export const getAlerts = async (kindergartenId: string, userType: string) => {
+export const getAlerts = async (kindergartenId: string, userType: UserType) => {
   try {
     const alerts = await db.alert.findMany({
       where: {
         kindergartenId,
-        OR: [
-          { targetUserType: userType },
-          { targetUserType: "ALL" }
-        ],
-        // Only show alerts that haven't expired
-        OR: [
-          { expiresAt: { gt: new Date() } },
-          { expiresAt: null }
+        AND: [
+          {
+            OR: [
+              { targetUserType: userType },
+              { targetUserType: "ALL" }
+            ]
+          },
+          {
+            OR: [
+              { expiresAt: { gt: new Date() } },
+              { expiresAt: null }
+            ]
+          }
         ]
       },
       orderBy: {
@@ -81,19 +87,25 @@ export const deleteAlert = async (alertId: string) => {
 };
 
 // Get unread alerts count
-export const getUnreadAlertsCount = async (kindergartenId: string, userType: string) => {
+export const getUnreadAlertsCount = async (kindergartenId: string, userType: UserType) => {
   try {
     const count = await db.alert.count({
       where: {
         kindergartenId,
         isRead: false,
-        OR: [
-          { targetUserType: userType },
-          { targetUserType: "ALL" }
-        ],
-        OR: [
-          { expiresAt: { gt: new Date() } },
-          { expiresAt: null }
+        AND: [
+          {
+            OR: [
+              { targetUserType: userType },
+              { targetUserType: "ALL" }
+            ]
+          },
+          {
+            OR: [
+              { expiresAt: { gt: new Date() } },
+              { expiresAt: null }
+            ]
+          }
         ]
       }
     });

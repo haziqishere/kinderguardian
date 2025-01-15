@@ -1,52 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { EventCard } from "./_components/event-card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-
 import { EventFormDialog } from "./_components/event-form-dialog";
+import { getEvents } from "@/actions/event";
+import { Event } from "@prisma/client";
+import { db } from "@/lib/db";
 
 export default function EventsPage() {
-  // Sample data - will be replaced with real data
-  const upcomingEvents = [
-    {
-      id: "1",
-      title: "Petrosains KLCC Visit",
-      dateTime: "30 March 2024",
-      location: "KLCC, Kuala Lumpur",
-      cost: 45.0,
-      description:
-        "Educational visit to Petrosains Discovery Centre to learn about science and technology through interactive exhibits.",
-      teacherInCharge: "Sarah Madiyah",
-    },
-    {
-      id: "2",
-      title: "Beryl's Chocolate Factory Visit",
-      dateTime: "8 August 2024",
-      location: "Beryl's Chocolate Factory",
-      cost: 35.0,
-      description:
-        "Factory visit to learn about chocolate making process and enjoy chocolate tasting session.",
-      teacherInCharge: "Nurul Aisyah",
-    },
-  ];
+  const { orgId } = useParams();
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
 
-  const classes = [
-    { id: "1", name: "5 Kenyala" },
-    { id: "2", name: "5 Kenari" },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [eventsResult, classesResult] = await Promise.all([
+          getEvents(orgId as string, "ADMIN"),
+          db.class.findMany({
+            where: { kindergartenId: orgId as string },
+            select: { id: true, name: true },
+          }),
+        ]);
 
-  const pastEvents: any[] = [
-    // ... similar structure for past events
-  ];
+        if (eventsResult.data) {
+          const now = new Date();
+          // Split events into upcoming and past
+          const upcoming = eventsResult.data.filter(
+            (event) => new Date(event.startDate) >= now
+          );
+          const past = eventsResult.data.filter(
+            (event) => new Date(event.startDate) < now
+          );
 
-  /*
-  const classes = await db.class.findMany({
-    select: {
-        id: true,
-        name: true,
-    }
-  })
-  */
+          setUpcomingEvents(upcoming);
+          setPastEvents(past);
+        }
+
+        setClasses(classesResult);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [orgId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -60,7 +70,15 @@ export default function EventsPage() {
           <h2 className="text-lg font-semibold mb-4">Upcoming Events</h2>
           <div className="grid gap-4">
             {upcomingEvents.map((event) => (
-              <EventCard key={event.id} {...event} />
+              <EventCard
+                key={event.id}
+                title={event.title}
+                dateTime={new Date(event.startDate).toLocaleDateString()}
+                location={event.location}
+                cost={0}
+                description={event.description}
+                teacherInCharge={undefined}
+              />
             ))}
           </div>
         </div>
@@ -71,7 +89,15 @@ export default function EventsPage() {
             <h2 className="text-lg font-semibold mb-4">Past Events</h2>
             <div className="grid gap-4">
               {pastEvents.map((event) => (
-                <EventCard key={event.id} {...event} />
+                <EventCard
+                  key={event.id}
+                  title={event.title}
+                  dateTime={new Date(event.startDate).toLocaleDateString()}
+                  location={event.location}
+                  cost={0}
+                  description={event.description}
+                  teacherInCharge={undefined}
+                />
               ))}
             </div>
           </div>

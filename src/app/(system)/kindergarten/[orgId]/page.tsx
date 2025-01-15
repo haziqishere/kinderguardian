@@ -9,12 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar, Users, School, Bell } from "lucide-react";
 import { format } from "date-fns";
+import { DashboardStats, Activity } from "./types";
 
 export default function DashboardPage() {
   const params = useParams();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,7 +33,7 @@ export default function DashboardPage() {
     fetchData();
   }, [params.orgId]);
 
-  if (loading) {
+  if (loading || !stats) {
     return (
       <div className="p-6 space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -117,7 +118,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.classUtilization.map((class_: any) => (
+              {stats.classUtilization.map((class_) => (
                 <div key={class_.id} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>{class_.name}</span>

@@ -8,9 +8,9 @@ export const ClassSchema = z.object({
     kindergartenId: z.string().min(1, "Kindergarten ID is required"),
 });
 
-export const ClassWithDetailsSchema = ClassSchema.extend({
-    studentCount: z.number(),
+export const UpdateClassSchema = ClassSchema.extend({
+    id: z.string(),
 });
 
 export type ClassSchemaType = z.infer<typeof ClassSchema>;
-export type ClassWithDetailsSchemaType = z.infer<typeof ClassWithDetailsSchema>;
+export type UpdateClassSchemaType = z.infer<typeof UpdateClassSchema>;

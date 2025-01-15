@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { Activity } from "@/app/(system)/kindergarten/[orgId]/types";
+import { subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 // Get dashboard statistics
 export const getDashboardStats = async (kindergartenId: string) => {
@@ -7,7 +9,8 @@ export const getDashboardStats = async (kindergartenId: string) => {
       totalStudents,
       totalClasses,
       upcomingEvents,
-      unreadAlerts
+      unreadAlerts,
+      classUtilization
     ] = await Promise.all([
       // Get total students
       db.student.count({
@@ -19,20 +22,15 @@ export const getDashboardStats = async (kindergartenId: string) => {
       }),
       // Get total classes
       db.class.count({
-        where: {
-          kindergartenId
-        }
+        where: { kindergartenId }
       }),
-      // Get upcoming events (next 5)
+      // Get upcoming events
       db.event.findMany({
         where: {
           kindergartenId,
           startDate: {
             gte: new Date()
           }
-        },
-        orderBy: {
-          startDate: 'asc'
         },
         take: 5,
         include: {
@@ -43,40 +41,23 @@ export const getDashboardStats = async (kindergartenId: string) => {
       db.alert.findMany({
         where: {
           kindergartenId,
-          isRead: false,
-          OR: [
-            { expiresAt: { gt: new Date() } },
-            { expiresAt: null }
-          ]
-        },
-        orderBy: {
-          createdAt: 'desc'
+          isRead: false
         },
         take: 5
+      }),
+      // Get class utilization
+      db.class.findMany({
+        where: { kindergartenId },
+        include: {
+          students: true,
+        }
       })
     ]);
 
-    // Get class utilization
-    const classes = await db.class.findMany({
-      where: {
-        kindergartenId
-      },
-      include: {
-        _count: {
-          select: {
-            students: true
-          }
-        }
-      }
-    });
-
-    const classUtilization = classes.map(class_ => ({
-      id: class_.id,
-      name: class_.name,
-      capacity: class_.capacity,
-      studentCount: class_._count.students,
-      utilizationRate: (class_._count.students / class_.capacity) * 100
-    }));
+    // Calculate overall utilization
+    const totalCapacity = classUtilization.reduce((acc, curr) => acc + (curr.capacity || 0), 0);
+    const totalEnrolled = classUtilization.reduce((acc, curr) => acc + curr.students.length, 0);
+    const overallUtilization = totalCapacity > 0 ? totalEnrolled / totalCapacity : 0;
 
     return {
       data: {
@@ -84,16 +65,68 @@ export const getDashboardStats = async (kindergartenId: string) => {
         totalClasses,
         upcomingEvents,
         unreadAlerts,
-        classUtilization,
-        // Calculate overall utilization
-        overallUtilization: classes.length > 0
-          ? (totalStudents / classes.reduce((acc, curr) => acc + curr.capacity, 0)) * 100
-          : 0
+        classUtilization: classUtilization.map(c => ({
+          id: c.id,
+          name: c.name,
+          capacity: c.capacity || 0,
+          studentCount: c.students.length,
+          utilizationRate: c.capacity ? (c.students.length / c.capacity) * 100 : 0
+        })),
+        overallUtilization
       }
     };
   } catch (error) {
     console.error("[GET_DASHBOARD_STATS]", error);
-    return { error: "Failed to fetch dashboard statistics" };
+    return { error: "Failed to fetch dashboard stats" };
+  }
+};
+
+// Get attendance statistics for the past 6 months
+export const getAttendanceStats = async (kindergartenId: string) => {
+  try {
+    const today = new Date();
+    const sixMonthsAgo = subMonths(today, 6);
+
+    // Get all attendance records for the past 6 months
+    const attendanceRecords = await db.attendance.findMany({
+      where: {
+        student: {
+          class: {
+            kindergartenId
+          }
+        },
+        date: {
+          gte: startOfMonth(sixMonthsAgo),
+          lte: endOfMonth(today)
+        }
+      }
+    });
+
+    // Group by month and calculate attendance rate
+    const monthlyStats = Array.from({ length: 6 }, (_, i) => {
+      const monthDate = subMonths(today, i);
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+
+      const monthRecords = attendanceRecords.filter(record => 
+        record.date >= monthStart && record.date <= monthEnd
+      );
+
+      const totalRecords = monthRecords.length;
+      const presentRecords = monthRecords.filter(record => 
+        record.status === "ON_TIME" || record.status === "LATE"
+      ).length;
+
+      return {
+        date: monthStart,
+        attendanceRate: totalRecords > 0 ? presentRecords / totalRecords : 0
+      };
+    }).reverse(); // Most recent last
+
+    return { data: monthlyStats };
+  } catch (error) {
+    console.error("[GET_ATTENDANCE_STATS]", error);
+    return { error: "Failed to fetch attendance stats" };
   }
 };
 
@@ -130,16 +163,16 @@ export const getRecentActivities = async (kindergartenId: string) => {
     ]);
 
     // Combine and sort activities by date
-    const activities = [
+    const activities: Activity[] = [
       ...recentEvents.map(event => ({
-        type: 'EVENT',
+        type: 'EVENT' as const,
         title: event.title,
         description: event.description,
         date: event.startDate,
         data: event
       })),
       ...recentAlerts.map(alert => ({
-        type: 'ALERT',
+        type: 'ALERT' as const,
         title: alert.title,
         description: alert.message,
         date: alert.createdAt,

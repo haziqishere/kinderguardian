@@ -1,17 +1,18 @@
 import { db } from "@/lib/db";
 import { EventSchema, EventSchemaType, EventWithAttendeesSchema } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
+import { z } from "zod";
+import { UserType } from "@prisma/client";
 
 // Get all events for a kindergarten
-export const getEvents = async (kindergartenId: string, userType: string) => {
+export const getEvents = async (kindergartenId: string, userType: UserType) => {
   try {
     const events = await db.event.findMany({
       where: {
         kindergartenId,
-        OR: [
-          { targetAudience: { has: userType } },
-          { targetAudience: { has: "ALL" } }
-        ],
+        targetAudience: {
+          hasSome: [userType, "ALL"]
+        },
         endDate: {
           gte: new Date() // Only show current and future events
         }
@@ -32,15 +33,14 @@ export const getEvents = async (kindergartenId: string, userType: string) => {
 };
 
 // Get upcoming events
-export const getUpcomingEvents = async (kindergartenId: string, userType: string, limit = 5) => {
+export const getUpcomingEvents = async (kindergartenId: string, userType: UserType, limit = 5) => {
   try {
     const events = await db.event.findMany({
       where: {
         kindergartenId,
-        OR: [
-          { targetAudience: { has: userType } },
-          { targetAudience: { has: "ALL" } }
-        ],
+        targetAudience: {
+          hasSome: [userType, "ALL"]
+        },
         startDate: {
           gte: new Date()
         }
@@ -148,7 +148,7 @@ export const updateAttendeeStatus = async (
 // Add attendees to an event
 export const addEventAttendees = async (
   eventId: string,
-  attendees: { name: string; type: string }[]
+  attendees: { name: string; type: UserType }[]
 ) => {
   try {
     const event = await db.event.update({
@@ -158,7 +158,7 @@ export const addEventAttendees = async (
           createMany: {
             data: attendees.map(attendee => ({
               name: attendee.name,
-              type: attendee.type as any,
+              type: attendee.type,
               status: "PENDING"
             }))
           }
