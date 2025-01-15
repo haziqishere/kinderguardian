@@ -1,6 +1,6 @@
 // src/actions/auth/login.ts
 import { auth } from "@/lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { LoginSchemaType } from "./schema";
 
 export const login = async (data: LoginSchemaType) => {
@@ -54,5 +54,22 @@ export const login = async (data: LoginSchemaType) => {
     return { 
       error: error?.message || "Failed to login"
     };
+  }
+};
+
+export const logout = async () => {
+  try {
+    // Sign out from Firebase
+    await signOut(auth);
+    
+    // Clear session cookie
+    await fetch("/api/auth/session", {
+      method: "DELETE",
+    });
+
+    return { data: { success: true } };
+  } catch (error: any) {
+    console.error("Logout error:", error);
+    return { error: "Failed to logout" };
   }
 };

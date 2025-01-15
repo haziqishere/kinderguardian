@@ -29,3 +29,17 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE() {
+  try {
+    // Delete the session cookie
+    cookies().delete('session');
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[Session] Deletion error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete session' },
+      { status: 500 }
+    );
+  }
+}
