@@ -1,21 +1,16 @@
 // src/actions/class/schema.ts
 import { z } from "zod"
 
-const ClassFormSchema = z.object({
+export const ClassSchema = z.object({
+    id: z.string().optional(),
     name: z.string().min(1, "Class name is required"),
-    capacity: z.coerce.number()
-        .min(1, "Capacity must be at least 1")
-        .max(40, "Capacity cannot exceed 40"),
-    kindergartenId: z.string()
+    capacity: z.number().min(1, "Capacity must be at least 1").max(40, "Maximum capacity is 40"),
+    kindergartenId: z.string().min(1, "Kindergarten ID is required"),
 });
 
-// Schema for creating a class
-export const ClassSchema = ClassFormSchema;
-
-// Schema for updating a class (includes id)
-export const UpdateClassSchema = ClassFormSchema.extend({
-    id: z.string()
+export const ClassWithDetailsSchema = ClassSchema.extend({
+    studentCount: z.number(),
 });
 
 export type ClassSchemaType = z.infer<typeof ClassSchema>;
-export type UpdateClassSchemaType = z.infer<typeof UpdateClassSchema>;
+export type ClassWithDetailsSchemaType = z.infer<typeof ClassWithDetailsSchema>;

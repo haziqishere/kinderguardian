@@ -1,30 +1,38 @@
 import { StudentList } from "./_components/student-list";
+import { getStudents } from "@/actions/student";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
-export default function StudentListPage() {
-  // Sample data - replace with actual data fetching
-  const students = [
-    {
-      id: "1",
-      name: "Muhammad Adam bin Idris",
-      age: 5,
-      class: "5 Kenyala",
-      daysAbsent: 2,
-      attendancePerformance: "98.5%",
-    },
-    {
-      id: "2",
-      name: "Anis Munirah binti Megat",
-      age: 5,
-      class: "5 Kenari",
-      daysAbsent: 1,
-      attendancePerformance: "99.2%",
-    },
-    // Add more sample data...
-  ];
+interface StudentListPageProps {
+  params: {
+    orgId: string;
+  };
+}
+
+export default async function StudentListPage({
+  params,
+}: StudentListPageProps) {
+  const result = await getStudents(params.orgId);
+
+  if (result.error) {
+    return (
+      <div className="p-6">
+        <div className="text-red-500">Error: {result.error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      <StudentList students={students} />
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center h-32">
+            <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+        }
+      >
+        <StudentList students={result.data || []} />
+      </Suspense>
     </div>
   );
 }
