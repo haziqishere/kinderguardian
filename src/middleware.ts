@@ -1,8 +1,23 @@
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtDecode } from "jwt-decode";
+
+interface FirebaseJwtPayload {
+  user_id: string;
+  sub: string;
+  email: string;
+  email_verified: boolean;
+  firebase: {
+    identities: {
+      email?: string[];
+    };
+    sign_in_provider: string;
+  };
+  exp: number;
+}
 
 export async function middleware(request: NextRequest) {
-  // Get the pathname of the request
   const path = request.nextUrl.pathname;
 
   // Skip middleware for API routes
@@ -10,90 +25,70 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Define public routes that don't need authentication
+  // Define public routes
   const isPublicRoute = ["/", "/sign-in", "/sign-up"].includes(path);
-
-  // If it's a public route, allow access
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // Get the token from the session cookie
+  // Check session
   const token = request.cookies.get("session")?.value;
-
-  // For protected routes, check authentication
   if (!token) {
-    // Redirect to sign-in if trying to access protected route without token
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
   try {
-    // Verify session by calling our session API endpoint
-    const sessionResponse = await fetch(`${request.nextUrl.origin}/api/auth/session`, {
-      method: 'GET',
-      headers: {
-        Cookie: `session=${token}`,
-      },
-    });
-
-    if (!sessionResponse.ok) {
+    // Decode token once
+    const decodedToken = jwtDecode<FirebaseJwtPayload>(token);
+    
+    // Check token expiration
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decodedToken.exp < currentTime) {
+      console.log("[Middleware] Token expired");
       return NextResponse.redirect(new URL("/sign-in", request.url));
     }
 
-    const { uid: firebaseId } = await sessionResponse.json();
+    const firebaseId = decodedToken.user_id;
 
-    // Check user type for protected routes
+    // Only check user type for protected routes
     if (path.startsWith("/parent") || path.startsWith("/kindergarten")) {
       try {
-        // Get user type from API
         const response = await fetch(`${request.nextUrl.origin}/api/auth/user-type`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            firebaseId,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firebaseId }),
         });
 
         if (!response.ok) {
-          // If user type check fails, redirect to sign-in
           return NextResponse.redirect(new URL("/sign-in", request.url));
         }
 
         const { userType } = await response.json();
 
-        // Check if user is trying to access the wrong route type
-        if (path.startsWith("/parent") && userType !== "parent") {
-          return NextResponse.redirect(new URL("/kindergarten/dashboard", request.url));
-        }
+        // Redirect if wrong route type
+        const isParentRoute = path.startsWith("/parent");
+        const isKindergartenRoute = path.startsWith("/kindergarten");
 
-        if (path.startsWith("/kindergarten") && userType !== "kindergarten") {
-          return NextResponse.redirect(new URL("/parent/children-list", request.url));
+        if ((isParentRoute && userType !== "parent") || 
+            (isKindergartenRoute && userType !== "kindergarten")) {
+          const redirectPath = userType === "parent" 
+            ? "/parent/children-list"
+            : "/kindergarten/dashboard"; // TODO: Change to dynamic route
+          return NextResponse.redirect(new URL(redirectPath, request.url));
         }
       } catch (error) {
-        // If there's an error checking user type, redirect to sign-in
+        console.error("[Middleware] Route protection error:", error);
         return NextResponse.redirect(new URL("/sign-in", request.url));
       }
     }
 
     return NextResponse.next();
   } catch (error) {
-    // If session verification fails, redirect to sign-in
+    console.error("[Middleware] Token validation error:", error);
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 }
 
-// Configure which routes to run middleware on
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public (public files)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
 };

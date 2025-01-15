@@ -1,26 +1,31 @@
+// src/app/api/auth/session/route.ts
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { adminAuth, isAdminAuthInitialized } from '@/lib/firebase-admin';
+import { jwtDecode } from "jwt-decode";
 
-export async function GET() {
+export async function POST(request: Request) {
   try {
-    if (!isAdminAuthInitialized(adminAuth)) {
-      return NextResponse.json({ error: "Auth not initialized" }, { status: 500 });
-    }
-
-    const session = cookies().get('session')?.value || '';
+    const { idToken } = await request.json();
     
-    if (!session) {
-      return NextResponse.json({ isValid: false }, { status: 401 });
-    }
-
-    const decodedClaims = await adminAuth.verifySessionCookie(session, true);
+    // Decode token to get expiration
+    const decodedToken = jwtDecode<{ exp: number }>(idToken);
+    const expiresIn = (decodedToken.exp * 1000) - Date.now();
     
-    return NextResponse.json({ 
-      isValid: true,
-      uid: decodedClaims.uid 
+    // Set cookie with proper expiration
+    cookies().set('session', idToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: Math.floor(expiresIn / 1000),
+      path: '/'
     });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ isValid: false }, { status: 401 });
+    console.error('[Session] Creation error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create session' },
+      { status: 500 }
+    );
   }
 }

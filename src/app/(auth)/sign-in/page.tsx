@@ -1,6 +1,5 @@
 "use client";
 
-import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -38,11 +37,6 @@ export default function SignInPage() {
 
       if (result.error) {
         toast.error(result.error);
-
-        // Check if we need to redirect to complete registration
-        if (result.redirect) {
-          router.push(result.redirect);
-        }
         return;
       }
 
@@ -58,7 +52,7 @@ export default function SignInPage() {
         router.push(route);
       }
     } catch (error) {
-      toast.error("Something went wrong");
+      toast.error("Failed to sign-in");
     } finally {
       setIsLoading(false);
     }

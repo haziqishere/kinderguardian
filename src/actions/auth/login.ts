@@ -15,9 +15,23 @@ export const login = async (data: LoginSchemaType) => {
     );
     
     const firebaseId = userCredential.user.uid;
+    const idToken = await userCredential.user.getIdToken();
     console.log("Firebase login successful for user:", firebaseId);
 
-    // API call
+    // Create session first
+    const sessionResponse = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken }),
+    });
+
+    if (!sessionResponse.ok) {
+      throw new Error("Failed to create session");
+    }
+
+    // Then validate user type
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
@@ -38,7 +52,7 @@ export const login = async (data: LoginSchemaType) => {
   } catch (error: any) {
     console.error("Login error:", error);
     return { 
-      error: error?.message || "Failed to login" 
+      error: error?.message || "Failed to login"
     };
   }
 };
