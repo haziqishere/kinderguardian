@@ -12,13 +12,30 @@ import {
   LogOut,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { logout } from "@/actions/auth/login";
+import { toast } from "sonner";
 
 export const Sidebar = () => {
   const params = useParams();
   const pathname = usePathname();
+  const router = useRouter();
   const orgId = params.orgId;
+
+  const handleLogout = async () => {
+    try {
+      const result = await logout();
+      if (result.data?.success) {
+        toast.success("Logged out successfully");
+        router.push("/sign-in");
+      } else {
+        toast.error("Failed to logout");
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+    }
+  };
 
   const routes = [
     {
@@ -100,7 +117,10 @@ export const Sidebar = () => {
 
         {/* Logout Button */}
         <div className="pt-6">
-          <button className="flex items-center space-x-3 w-full p-2 rounded hover:bg-gray-100 text-red-500">
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-3 w-full p-2 rounded hover:bg-gray-100 text-red-500 transition-colors"
+          >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>
           </button>
