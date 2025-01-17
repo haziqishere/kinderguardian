@@ -90,6 +90,8 @@ const createClassHandler = async (data: ClassSchemaType) => {
 // Update a class
 const updateClassHandler = async (data: ClassSchemaType & { id: string }) => {
   try {
+    console.log("Updating class with data:", data);  // Debug log
+    
     // Check if updating would exceed capacity
     const currentStudents = await db.student.count({
       where: { classId: data.id }
@@ -109,6 +111,7 @@ const updateClassHandler = async (data: ClassSchemaType & { id: string }) => {
       }
     });
 
+    console.log("Updated class:", class_);  // Debug log
     return { data: class_ };
   } catch (error) {
     console.error("[UPDATE_CLASS]", error);

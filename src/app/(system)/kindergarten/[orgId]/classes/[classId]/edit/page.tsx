@@ -9,7 +9,7 @@ import {
   UpdateClassSchemaType,
   UpdateClassSchema,
 } from "@/actions/class/schema";
-import { updateClass } from "@/actions/class";
+import { getClass, updateClass } from "@/actions/class";
 import {
   Form,
   FormControl,
@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface EditClassPageProps {
   params: {
@@ -32,6 +33,7 @@ interface EditClassPageProps {
 export default function EditClassPage({ params }: EditClassPageProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const form = useForm<UpdateClassSchemaType>({
     resolver: zodResolver(UpdateClassSchema),
@@ -39,6 +41,7 @@ export default function EditClassPage({ params }: EditClassPageProps) {
       id: params.classId,
       name: "",
       capacity: 25,
+      kindergartenId: params.orgId,
     },
   });
 
@@ -46,20 +49,24 @@ export default function EditClassPage({ params }: EditClassPageProps) {
   useEffect(() => {
     const fetchClass = async () => {
       try {
-        // TODO: Add getClass action and implement fetching
-        // const response = await getClass(params.classId);
-        // if (response.error) {
-        //   toast.error(response.error);
-        //   return;
-        // }
-        // form.reset({
-        //   id: response.data.id,
-        //   name: response.data.name,
-        //   capacity: response.data.capacity,
-        // });
+        const response = await getClass(params.classId);
+        if (response.error || !response.data) {
+          toast.error(response.error || "No data found");
+          return;
+        }
+
+        // Update form with fetched data
+        form.reset({
+          id: params.classId,
+          name: response.data.name,
+          capacity: response.data.capacity,
+          kindergartenId: params.orgId,
+        });
       } catch (error) {
         toast.error("Failed to fetch class details");
         router.push(`/kindergarten/${params.orgId}/classes`);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
@@ -69,7 +76,10 @@ export default function EditClassPage({ params }: EditClassPageProps) {
   const onSubmit = async (data: UpdateClassSchemaType) => {
     try {
       setLoading(true);
-      const response = await updateClass(data);
+      const response = await updateClass({
+        ...data,
+        kindergartenId: params.orgId,
+      });
 
       if (response.error) {
         toast.error(response.error);
@@ -84,6 +94,24 @@ export default function EditClassPage({ params }: EditClassPageProps) {
       setLoading(false);
     }
   };
+
+  //Loading state
+  if (isInitializing) {
+    return (
+      <div className="container mx-auto py-10">
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <div className="space-y-4">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              <p className="text-sm text-muted-foreground">
+                Loading class details...
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -116,6 +144,8 @@ export default function EditClassPage({ params }: EditClassPageProps) {
                     <FormControl>
                       <Input
                         type="number"
+                        min={1}
+                        max={40}
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
@@ -129,11 +159,19 @@ export default function EditClassPage({ params }: EditClassPageProps) {
                   variant="outline"
                   onClick={() => router.back()}
                   type="button"
+                  disabled={loading}
                 >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save Changes"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </div>
             </form>
