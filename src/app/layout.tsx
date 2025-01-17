@@ -5,7 +5,7 @@ import "../lib/polyfills";
 import "./globals.css";
 import { siteConfig } from "@/app/config/site";
 import Providers from "./providers";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 

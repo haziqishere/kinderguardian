@@ -7,10 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { EventSchema, EventSchemaType } from "@/actions/event/schema";
-import { createEvent } from "@/actions/event";
 import { toast } from "sonner";
 import { useCreateEvent } from "@/hooks/useEvents";
-import { UserType } from "@prisma/client";
 
 import {
   Dialog,
