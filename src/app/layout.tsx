@@ -5,6 +5,7 @@ import "../lib/polyfills";
 import "./globals.css";
 import { siteConfig } from "@/app/config/site";
 import Providers from "./providers";
+import { Toaster, toast } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,7 +32,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <Toaster />
+          {children}
+        </Providers>
       </body>
     </html>
   );
