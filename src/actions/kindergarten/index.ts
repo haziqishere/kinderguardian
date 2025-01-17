@@ -6,9 +6,9 @@ import {
   KindergartenSettingsSchema, 
   KindergartenSettingsSchemaType,
   KindergartenCreateSchema,
-  KindergartenJoinSchema
+  KindergartenJoinSchema,
+  SetupSchema
 } from "./schema";
-import { SetupSchema } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { z } from "zod";
 import { DayOfWeek } from "@prisma/client";
@@ -114,7 +114,7 @@ const getAvailableKindergartensHandler = async () => {
     const kindergartens = await db.kindergarten.findMany({
       select: {
         id: true,
-        name: true,
+        name: true, 
         address: true,
         _count: {
           select: {
@@ -127,23 +127,30 @@ const getAvailableKindergartensHandler = async () => {
         name: 'asc'
       }
     });
-
+    
     return { data: kindergartens };
   } catch (error) {
-    console.error("[GET_KINDERGARTENS]", error);
     return { error: "Failed to fetch kindergartens" };
   }
 };
 
 const joinKindergartenHandler = async (data: z.infer<typeof KindergartenJoinSchema>) => {
   try {
-    const admin = await db.admin.findUnique({
+    const existingAdmin = await db.admin.findUnique({
       where: { id: data.adminId },
       include: { kindergarten: true }
     });
 
-    if (admin?.kindergartenId) {
-      return { error: "Admin is already associated with a kindergarten" };
+    if (existingAdmin?.kindergartenId) {
+      return { error: "You are already associated with a kindergarten" };
+    }
+
+    const kindergarten = await db.kindergarten.findUnique({
+      where: { id: data.kindergartenId }
+    });
+
+    if (!kindergarten) {
+      return { error: "Kindergarten not found" };
     }
 
     const updatedAdmin = await db.admin.update({
@@ -159,17 +166,32 @@ const joinKindergartenHandler = async (data: z.infer<typeof KindergartenJoinSche
 
     return { data: updatedAdmin };
   } catch (error) {
-    console.error("[JOIN_KINDERGARTEN_ERROR]", error);
     return { error: "Failed to join kindergarten" };
   }
 };
 
-// Exports with proper schema types
 export const getKindergarten = getKindergartenHandler;
-export const getAvailableKindergartens = getAvailableKindergartensHandler;
-export const updateKindergarten = createSafeAction(KindergartenSettingsSchema, updateKindergartenHandler);
+export const updateKindergarten = createSafeAction(
+  KindergartenSettingsSchema,
+  updateKindergartenHandler  
+);
 export const completeSetup = createSafeAction(
-  KindergartenCreateSchema.extend({ adminId: z.string() }),
+  SetupSchema,
   completeSetupHandler
 );
-export const joinKindergarten = createSafeAction(KindergartenJoinSchema, joinKindergartenHandler);
+
+export async function getAvailableKindergartens() {
+  return getAvailableKindergartensHandler();
+}
+
+export async function joinKindergarten(
+  data: z.infer<typeof KindergartenJoinSchema>
+) {
+  const validation = KindergartenJoinSchema.safeParse(data);
+  
+  if (!validation.success) {
+    return { error: "Invalid data provided" };
+  }
+
+  return joinKindergartenHandler(data);
+}

@@ -38,6 +38,7 @@ export default function JoinKindergartenPage() {
   const [search, setSearch] = useState("");
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string | null>(null);
+  const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
   // Add useEffect to fetch adminId
   useEffect(() => {
@@ -56,6 +57,14 @@ export default function JoinKindergartenPage() {
         }
 
         const data = await response.json();
+
+        // Check if user already has a kindergarten
+        if (data.kindergartenId) {
+          toast.error("You are already part of a kindergarten");
+          router.push(`/kindergarten/${data.kindergartenId}/dashboard`);
+          return;
+        }
+
         if (data.userId) {
           setAdminId(data.userId);
         }
@@ -63,16 +72,53 @@ export default function JoinKindergartenPage() {
         console.error("Error fetching admin ID", error);
         toast.error("Failed to fetch admin ID");
         router.push("/sign-in");
+      } finally {
+        setIsLoadingAdmin(false);
       }
     };
     fetchAdminId();
   }, [router]);
 
   // Fetch available kindergartens
-  const { data: kindergartens, isLoading } = useQuery({
+  const {
+    data: kindergartens,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["kindergartens"],
-    queryFn: getAvailableKindergartens,
+    queryFn: async () => {
+      const result = await getAvailableKindergartens();
+      console.log("Fetched kindergartens:", result); // For debugging
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    },
+    enabled: !!adminId,
+    retry: 1,
   });
+
+  // Error handling if can't fetch kindergartens
+  if (error) {
+    <div className="min-h-[80vh] flex items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardContent className="py-20 text-center">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-destructive">
+              Error Loading Kindergartens
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error
+                ? error.message
+                : "Failed to load kindergartens"}
+            </p>
+            <Button onClick={() => refetch()}>Try Again</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>;
+  }
 
   // Filter kindergartens based on search
   const filteredKindergartens = kindergartens?.data?.filter(
@@ -84,6 +130,7 @@ export default function JoinKindergartenPage() {
   const handleJoinRequest = async (kindergartenId: string) => {
     if (!adminId) {
       toast.error("Admin ID not found");
+      router.push;
       return;
     }
 
@@ -109,99 +156,121 @@ export default function JoinKindergartenPage() {
     }
   };
 
-  return (
-    <div className="container max-w-5xl py-10">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mb-6"
-        onClick={() => router.back()}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
-      </Button>
-
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Join Kindergarten</h1>
-        <p className="text-muted-foreground mt-2">
-          Browse and join an existing kindergarten
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Kindergartens</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search kindergartens..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading kindergartens...
-            </div>
-          ) : !filteredKindergartens?.length ? (
-            <div className="text-center py-12">
-              <School className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium text-lg mb-2">
-                No kindergartens found
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {search
-                  ? "Try a different search term"
-                  : "No kindergartens are available to join"}
+  // Show loading state while checking admin status
+  if (isLoadingAdmin) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="py-20 text-center">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Loading...</h3>
+              <p className="text-sm text-muted-foreground">
+                Please wait while we check your details
               </p>
             </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Classes</TableHead>
-                    <TableHead>Admins</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredKindergartens.map((kindergarten) => (
-                    <TableRow key={kindergarten.id}>
-                      <TableCell className="font-medium">
-                        {kindergarten.name}
-                      </TableCell>
-                      <TableCell>{kindergarten.address}</TableCell>
-                      <TableCell>{kindergarten._count.classes}</TableCell>
-                      <TableCell>{kindergarten._count.admins}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={joiningId === kindergarten.id}
-                          onClick={() => handleJoinRequest(kindergarten.id)}
-                        >
-                          {joiningId === kindergarten.id
-                            ? "Joining..."
-                            : "Join"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center">
+      <div className="container max-w-5xl py-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Join Kindergarten
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Browse and join an existing kindergarten
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Available Kindergartens</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search kindergartens..."
+                  className="pl-9"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading kindergartens...
+              </div>
+            ) : !filteredKindergartens?.length ? (
+              <div className="text-center py-12">
+                <School className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-medium text-lg mb-2">
+                  No kindergartens found
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {search
+                    ? "Try a different search term"
+                    : "No kindergartens are available to join"}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Classes</TableHead>
+                      <TableHead>Admins</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredKindergartens.map((kindergarten) => (
+                      <TableRow key={kindergarten.id}>
+                        <TableCell className="font-medium">
+                          {kindergarten.name}
+                        </TableCell>
+                        <TableCell>{kindergarten.address}</TableCell>
+                        <TableCell>{kindergarten._count.classes}</TableCell>
+                        <TableCell>{kindergarten._count.admins}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={joiningId === kindergarten.id}
+                            onClick={() => handleJoinRequest(kindergarten.id)}
+                          >
+                            {joiningId === kindergarten.id
+                              ? "Joining..."
+                              : "Join"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
