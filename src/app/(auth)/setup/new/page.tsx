@@ -66,20 +66,19 @@ export default function NewSetupPage() {
   });
   const [adminId, setAdminId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [formError, setFormError] = useState<string | undefined>();
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
   const handleSetupComplete = async (completeFormData: FormData) => {
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
       console.log("Starting setup completion with adminId:", adminId);
-      console.log("Complete form data:", completeFormData);
 
       if (!adminId) {
-        console.log("No adminId found");
-        toast.error("Admin ID not found");
+        toast.error("Admin ID not found. Please sign in again.");
         return;
       }
 
@@ -88,8 +87,7 @@ export default function NewSetupPage() {
         !completeFormData.hours ||
         !completeFormData.alerts
       ) {
-        console.log("Missing required form data:", { completeFormData });
-        toast.error("All setup steps must be completed");
+        toast.error("Please complete all setup steps before proceeding.");
         return;
       }
 
@@ -102,15 +100,10 @@ export default function NewSetupPage() {
           endTime: oh.endTime,
         }));
 
-      console.log("Processed operating hours:", operatingHours);
-
       if (operatingHours.length === 0) {
-        console.log("No operating hours found");
-        toast.error("At least one operating day must be selected");
+        toast.error("Please select at least one operating day.");
         return;
       }
-
-      console.log("Basic form data:", completeFormData.basic);
 
       const setupData = {
         name: completeFormData.basic.name,
@@ -121,44 +114,46 @@ export default function NewSetupPage() {
         adminId,
       };
 
-      console.log("Setup data prepared:", setupData);
-      console.log("Attempting to call completeSetup");
-
       const result = await completeSetup(setupData);
-      console.log("CompleteSetup result:", result);
 
       if (result.error) {
-        if (result.error.includes("Unique constraint failed")) {
-          // If it's a duplicate name error, we can assume setup was successful
-          // and just redirect to the dashboard
-          const adminResponse = await fetch(`/api/admin/${adminId}`);
-          const adminData = await adminResponse.json();
-          if (adminData?.kindergartenId) {
-            router.push(`/kindergarten/${adminData.kindergartenId}/dashboard`);
-            return;
-          }
+        if (result.error.includes("already exists")) {
+          setFormError(
+            "A kindergarten with this name already exists. Please choose a different name."
+          );
+          toast.error(
+            "A kindergarten with this name already exists. Please choose a different name.",
+            {
+              duration: 5000,
+            }
+          );
+          // Go back to the first step to change the name
+          setCurrentStep(0);
+          return;
         }
         toast.error(result.error);
         return;
       }
 
       if (!result.data) {
-        toast.error("No data returned from setup");
+        toast.error("Setup failed. Please try again.");
         return;
       }
 
-      console.log("Setup successful, data:", result.data);
-      toast.success("Setup completed successfully!");
+      toast.success(
+        "Setup completed successfully! Redirecting to dashboard..."
+      );
       router.push(`/kindergarten/${result.data.id}/dashboard`);
     } catch (error) {
       console.error("Setup error:", error);
-      toast.error("Failed to complete setup");
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleStepComplete = (stepId: string, data: any) => {
+    setFormError(undefined); //Clear any previous errors
     setFormData((prev) => {
       const updated = {
         ...prev,
@@ -214,8 +209,8 @@ export default function NewSetupPage() {
   // Loading State
   if (isLoading) {
     return (
-      <div className="container max-w-3xl py-10">
-        <Card>
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <Card className="w-full max-w-md">
           <CardContent className="py-20 text-center">
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Loading...</h3>
@@ -232,8 +227,8 @@ export default function NewSetupPage() {
   // Error State Check
   if (!adminId) {
     return (
-      <div className="container max-w-3xl py-10">
-        <Card>
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <Card className="w-full max-w-md">
           <CardContent className="py-20 text-center">
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-destructive">
@@ -253,67 +248,70 @@ export default function NewSetupPage() {
   }
 
   return (
-    <div className="container max-w-3xl py-10">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mb-6"
-        onClick={() => router.back()}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
-      </Button>
+    <div className="min-h-[80vh] flex items-center justify-center py-10">
+      <div className="w-full max-w-3xl py-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
 
-      <div className="mb-8">
-        <div className="mb-4 space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {STEPS[currentStep].title}
-          </h1>
-          <p className="text-muted-foreground">
-            {STEPS[currentStep].description}
-          </p>
+        <div className="mb-8">
+          <div className="mb-4 space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {STEPS[currentStep].title}
+            </h1>
+            <p className="text-muted-foreground">
+              {STEPS[currentStep].description}
+            </p>
+          </div>
+
+          <Progress value={progress} className="h-2" />
+          <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+            {STEPS.map((step, index) => (
+              <span
+                key={step.id}
+                className={currentStep >= index ? "text-primary" : ""}
+              >
+                Step {index + 1}
+              </span>
+            ))}
+          </div>
         </div>
 
-        <Progress value={progress} className="h-2" />
-        <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-          {STEPS.map((step, index) => (
-            <span
-              key={step.id}
-              className={currentStep >= index ? "text-primary" : ""}
-            >
-              Step {index + 1}
-            </span>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <Tabs value={STEPS[currentStep].id}>
+              <TabsContent value="basic" className="m-0">
+                <BasicInfoForm
+                  onSubmit={(data) => handleStepComplete("basic", data)}
+                  defaultValues={formData.basic}
+                  isSubmitting={isSubmitting}
+                  error={formError}
+                />
+              </TabsContent>
+              <TabsContent value="hours" className="m-0">
+                <OperatingHoursForm
+                  onSubmit={(data) => handleStepComplete("hours", data)}
+                  defaultValues={formData.hours}
+                  isSubmitting={isSubmitting}
+                />
+              </TabsContent>
+              <TabsContent value="alerts" className="m-0">
+                <AlertSettingsForm
+                  onSubmit={(data) => handleStepComplete("alerts", data)}
+                  defaultValues={formData.alerts}
+                  isSubmitting={isSubmitting}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <Tabs value={STEPS[currentStep].id}>
-            <TabsContent value="basic" className="m-0">
-              <BasicInfoForm
-                onSubmit={(data) => handleStepComplete("basic", data)}
-                defaultValues={formData.basic}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-            <TabsContent value="hours" className="m-0">
-              <OperatingHoursForm
-                onSubmit={(data) => handleStepComplete("hours", data)}
-                defaultValues={formData.hours}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-            <TabsContent value="alerts" className="m-0">
-              <AlertSettingsForm
-                onSubmit={(data) => handleStepComplete("alerts", data)}
-                defaultValues={formData.alerts}
-                isSubmitting={isSubmitting}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
     </div>
   );
 }
