@@ -9,6 +9,7 @@ import {
   KindergartenSettingsSchemaType,
   KindergartenSettingsSchema,
 } from "@/actions/kindergarten/schema";
+import { getSettings, updateSettings } from "@/actions/settings";
 import { getKindergarten, updateKindergarten } from "@/actions/kindergarten";
 import {
   Form,
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Clock, Bell, Save } from "lucide-react";
+import { Building2, Clock, Bell, Save, Loader2 } from "lucide-react";
 
 interface SettingsPageProps {
   params: {
@@ -58,6 +59,7 @@ const dayNames: Record<DayOfWeek, string> = {
 
 export default function SettingsPage({ params }: SettingsPageProps) {
   const [loading, setLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true); // Add this
   const [activeTab, setActiveTab] = useState("general");
 
   const form = useForm<KindergartenSettingsSchemaType>({
@@ -77,30 +79,72 @@ export default function SettingsPage({ params }: SettingsPageProps) {
   });
 
   useEffect(() => {
-    const fetchKindergarten = async () => {
-      const result = await getKindergarten(params.orgId);
-      if (result.error || !result.data) {
-        toast.error(result.error || "Failed to fetch kindergarten data");
-        return;
+    let isMounted = true; // Add this
+
+    async function loadSettings() {
+      try {
+        const result = await getSettings(params.orgId);
+
+        if (!isMounted) return; // Check if still mounted
+
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+
+        const settings = result.data;
+        if (!settings) {
+          toast.error("Failed to load settings");
+          return;
+        }
+
+        const formattedData = {
+          id: settings.id,
+          name: settings.name,
+          address: settings.address,
+          messageAlertThreshold: formatTime(settings.messageAlertThreshold),
+          callAlertThreshold: formatTime(settings.callAlertThreshold),
+          operatingHours: settings.operatingHours.map((oh) => ({
+            dayOfWeek: oh.dayOfWeek,
+            startTime: formatTime(oh.startTime),
+            endTime: formatTime(oh.endTime),
+          })),
+        };
+
+        form.reset(formattedData);
+      } catch (error) {
+        if (!isMounted) return; // Check if still mounted
+        console.error("Error loading settings:", error);
+        toast.error("Failed to load settings");
+      } finally {
+        if (isMounted) {
+          // Check if still mounted
+          setIsInitializing(false);
+        }
       }
+    }
 
-      const data = result.data;
-      form.reset({
-        id: data.id,
-        name: data.name,
-        address: data.address,
-        messageAlertThreshold: formatTime(data.messageAlertThreshold),
-        callAlertThreshold: formatTime(data.callAlertThreshold),
-        operatingHours: data.operatingHours.map((oh) => ({
-          dayOfWeek: oh.dayOfWeek,
-          startTime: formatTime(oh.startTime),
-          endTime: formatTime(oh.endTime),
-        })),
-      });
+    loadSettings();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
     };
+  }, [params.orgId]);
 
-    fetchKindergarten();
-  }, [params.orgId, form]);
+  // Add loading state UI
+  if (isInitializing) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Loading settings...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const onSubmit = async (data: KindergartenSettingsSchemaType) => {
     try {
@@ -114,7 +158,8 @@ export default function SettingsPage({ params }: SettingsPageProps) {
 
       toast.success("Settings updated successfully");
     } catch (error) {
-      toast.error("Something went wrong");
+      console.error("Error updating settings:", error);
+      toast.error("Failed to update settings");
     } finally {
       setLoading(false);
     }

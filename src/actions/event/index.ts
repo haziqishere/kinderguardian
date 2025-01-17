@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/lib/db";
 import { EventSchema, EventSchemaType, EventWithAttendeesSchema } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
@@ -7,6 +9,7 @@ import { UserType } from "@prisma/client";
 // Get all events for a kindergarten
 export const getEvents = async (kindergartenId: string, userType: UserType) => {
   try {
+    console.log("Fetching events for kindergarten:", kindergartenId);
     const events = await db.event.findMany({
       where: {
         kindergartenId,
@@ -175,6 +178,19 @@ export const addEventAttendees = async (
     return { error: "Failed to add attendees" };
   }
 };
+
+export async function getClassesForKindergarten(kindergartenId: string) {
+  try {
+    const classes = await db.class.findMany({
+      where: { kindergartenId },
+      select: { id: true, name: true },
+    });
+    return { data: classes };
+  } catch (error) {
+    console.error("[GET_CLASSES]", error);
+    return { error: "Failed to fetch classes" };
+  }
+}
 
 export const createEvent = createSafeAction(EventSchema, createEventHandler);
 export const updateEvent = createSafeAction(
