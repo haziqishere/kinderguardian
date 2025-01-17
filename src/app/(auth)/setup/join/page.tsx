@@ -1,7 +1,7 @@
 // app/(auth)/setup/join/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   getAvailableKindergartens,
   joinKindergarten,
 } from "@/actions/kindergarten";
+import { getCurrentUser } from "@/lib/firebase/auth";
 
 interface Kindergarten {
   id: string;
@@ -36,6 +37,36 @@ export default function JoinKindergartenPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [adminId, setAdminId] = useState<string | null>(null);
+
+  // Add useEffect to fetch adminId
+  useEffect(() => {
+    const fetchAdminId = async () => {
+      try {
+        const response = await fetch("/api/auth/user-type", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firebaseId: await getCurrentUser(),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch admin ID");
+        }
+
+        const data = await response.json();
+        if (data.userId) {
+          setAdminId(data.userId);
+        }
+      } catch (error) {
+        console.error("Error fetching admin ID", error);
+        toast.error("Failed to fetch admin ID");
+        router.push("/sign-in");
+      }
+    };
+    fetchAdminId();
+  }, [router]);
 
   // Fetch available kindergartens
   const { data: kindergartens, isLoading } = useQuery({
@@ -51,12 +82,17 @@ export default function JoinKindergartenPage() {
   );
 
   const handleJoinRequest = async (kindergartenId: string) => {
+    if (!adminId) {
+      toast.error("Admin ID not found");
+      return;
+    }
+
     try {
       setJoiningId(kindergartenId);
       // We'll need to get the adminId from context/session
       const result = await joinKindergarten({
         kindergartenId,
-        adminId: "current-admin-id", // This needs to be dynamic
+        adminId: adminId,
       });
 
       if (result.error) {
