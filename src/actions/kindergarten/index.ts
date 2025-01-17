@@ -109,6 +109,7 @@ const completeSetupHandler = async (data: z.infer<typeof SetupSchema>) => {
   }
 };
 
+// Get available created kindergartens handler
 const getAvailableKindergartensHandler = async () => {
   try {
     const kindergartens = await db.kindergarten.findMany({
@@ -134,6 +135,7 @@ const getAvailableKindergartensHandler = async () => {
   }
 };
 
+// Join kindergarten handler
 const joinKindergartenHandler = async (data: z.infer<typeof KindergartenJoinSchema>) => {
   try {
     const existingAdmin = await db.admin.findUnique({
@@ -169,6 +171,7 @@ const joinKindergartenHandler = async (data: z.infer<typeof KindergartenJoinSche
     return { error: "Failed to join kindergarten" };
   }
 };
+
 
 export const getKindergarten = getKindergartenHandler;
 export const updateKindergarten = createSafeAction(

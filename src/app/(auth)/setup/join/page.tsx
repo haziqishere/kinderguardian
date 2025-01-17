@@ -22,6 +22,7 @@ import {
   joinKindergarten,
 } from "@/actions/kindergarten";
 import { getCurrentUser } from "@/lib/firebase/auth";
+import { VerifyDialog } from "../_components/verify-dialog";
 
 interface Kindergarten {
   id: string;
@@ -39,6 +40,11 @@ export default function JoinKindergartenPage() {
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string | null>(null);
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
+  const [manualJoinId, setManualJoinId] = useState("");
+
+  const [selectedKindergarten, setSelectedKindergarten] =
+    useState<Kindergarten | null>(null);
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
 
   // Add useEffect to fetch adminId
   useEffect(() => {
@@ -129,8 +135,8 @@ export default function JoinKindergartenPage() {
 
   const handleJoinRequest = async (kindergartenId: string) => {
     if (!adminId) {
-      toast.error("Admin ID not found");
-      router.push;
+      toast.error("Please sign in again");
+      router.push("/sign-in");
       return;
     }
 
@@ -150,10 +156,28 @@ export default function JoinKindergartenPage() {
       toast.success("Successfully joined kindergarten!");
       router.push(`/kindergarten/${kindergartenId}/dashboard`);
     } catch (error) {
+      console.error("Join error:", error);
       toast.error("Failed to join kindergarten");
     } finally {
       setJoiningId(null);
+      setShowVerifyDialog(false);
+      setManualJoinId("");
     }
+  };
+
+  // Add verification handler
+  const handleVerification = async (verificationId: string) => {
+    if (!selectedKindergarten) return;
+
+    // Get first 5 charactes of kindergarten ID
+    const shortId = selectedKindergarten.id.substring(0, 5);
+
+    if (verificationId !== shortId) {
+      toast.error("Invalid verificaiton ID");
+      return;
+    }
+
+    await handleJoinRequest(selectedKindergarten.id);
   };
 
   // Show loading state while checking admin status
@@ -255,7 +279,10 @@ export default function JoinKindergartenPage() {
                             variant="outline"
                             size="sm"
                             disabled={joiningId === kindergarten.id}
-                            onClick={() => handleJoinRequest(kindergarten.id)}
+                            onClick={() => {
+                              setSelectedKindergarten(kindergarten);
+                              setShowVerifyDialog(true);
+                            }}
                           >
                             {joiningId === kindergarten.id
                               ? "Joining..."
@@ -268,9 +295,46 @@ export default function JoinKindergartenPage() {
                 </Table>
               </div>
             )}
+
+            <div className="mb-6 mt-4 p-4 border rounded-lg">
+              <h3 className="text-sm font-medium mb-2">
+                Have a kindergarten code?
+              </h3>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter kindergarten code"
+                  value={manualJoinId}
+                  onChange={(e) => setManualJoinId(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!manualJoinId || joiningId !== null}
+                  onClick={() => {
+                    const found = kindergartens?.data?.find(
+                      (k) => k.id === manualJoinId
+                    );
+                    setSelectedKindergarten(found || null);
+                    setShowVerifyDialog(true);
+                  }}
+                >
+                  Join
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
+      <VerifyDialog
+        isOpen={showVerifyDialog}
+        onClose={() => {
+          setShowVerifyDialog(false);
+          setSelectedKindergarten(null);
+        }}
+        onConfirm={handleVerification}
+        kindergartenName={selectedKindergarten?.name || ""}
+        isLoading={joiningId === selectedKindergarten?.id}
+      />
     </div>
   );
 }
