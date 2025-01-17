@@ -47,6 +47,16 @@ export const login = async (data: LoginSchemaType) => {
       throw new Error(responseData.error || "Failed to login");
     }
 
+    // Return the data with needsSetup flag if applicable
+    if (responseData.userType === "kindergarten" && !responseData.data.kindergartenId) {
+      return {
+        data: {
+          ...responseData,
+          needsSetup: true
+        }
+      };
+    }
+
     return { data: responseData };
 
   } catch (error: any) {

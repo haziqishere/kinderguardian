@@ -65,7 +65,7 @@ export const Sidebar = () => {
         {
           label: "Reports",
           icon: <FileText className="w-5 h-5" />,
-          href: `/kindergarten/${orgId}/reports`,
+          href: `/kindergarten/${orgId}/report`,
         },
         {
           label: "Classes", // Add this new route

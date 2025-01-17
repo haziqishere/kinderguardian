@@ -17,6 +17,7 @@ interface FirebaseJwtPayload {
   exp: number;
 }
 
+// middleware.ts
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
@@ -25,8 +26,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Define public routes
-  const isPublicRoute = ["/", "/sign-in", "/sign-up"].includes(path);
+  // Define public routes - add all setup paths
+  const isPublicRoute = [
+    "/", 
+    "/sign-in", 
+    "/sign-up", 
+    "/setup",
+    "/setup/new",
+    "/setup/join"
+  ].some(route => path.startsWith(route));
+
   if (isPublicRoute) {
     return NextResponse.next();
   }
@@ -38,7 +47,6 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Decode token once
     const decodedToken = jwtDecode<FirebaseJwtPayload>(token);
     
     // Check token expiration
@@ -63,7 +71,22 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL("/sign-in", request.url));
         }
 
-        const { userType } = await response.json();
+        const { userType, kindergartenId } = await response.json();
+        console.log("[Middleware] User type check:", { userType, kindergartenId });
+
+        // Check if admin needs setup
+        if (userType === "kindergarten" && !kindergartenId) {
+          console.log("[Middleware] Admin needs setup, redirecting to /setup");
+          return NextResponse.redirect(new URL("/setup", request.url));
+        }
+
+        // Log the route decision
+        console.log("[Middleware] Route decision:", {
+          isParentRoute: path.startsWith("/parent"),
+          isKindergartenRoute: path.startsWith("/kindergarten"),
+          userType,
+          path
+        });
 
         // Redirect if wrong route type
         const isParentRoute = path.startsWith("/parent");
@@ -73,7 +96,7 @@ export async function middleware(request: NextRequest) {
             (isKindergartenRoute && userType !== "kindergarten")) {
           const redirectPath = userType === "parent" 
             ? "/parent/children-list"
-            : "/kindergarten/dashboard"; // TODO: Change to dynamic route
+            : "/kindergarten/dashboard"; 
           return NextResponse.redirect(new URL(redirectPath, request.url));
         }
       } catch (error) {

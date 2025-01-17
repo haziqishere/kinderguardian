@@ -1,4 +1,6 @@
 // src/actions/class/index.ts
+"use server";
+
 import { db } from "@/lib/db";
 import { ClassSchema, ClassSchemaType } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";

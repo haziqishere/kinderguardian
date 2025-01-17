@@ -19,6 +19,8 @@ enum AttendanceStatus {
 }
 
 enum AlertType {
+  MESSAGED
+  CALLED
   INFO
   WARNING
   ERROR
@@ -197,15 +199,15 @@ model AlertLog {
 }
 
 model Admin {
-  id             String       @id @default(uuid())
-  firebaseId     String       @unique
-  email          String       @unique
+  id             String        @id @default(uuid())
+  firebaseId     String        @unique
+  email          String        @unique
   name           String
-  role           AdminRole    @default(ADMIN)
-  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
-  kindergartenId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  role           AdminRole     @default(ADMIN)
+  kindergarten   Kindergarten? @relation(fields: [kindergartenId], references: [id])
+  kindergartenId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([kindergartenId])
   @@index([firebaseId])
@@ -227,6 +229,8 @@ model Alert {
 
   @@index([kindergartenId])
   @@index([createdAt])
+  @@index([type])
+  @@index([targetUserType])
 }
 
 model Event {

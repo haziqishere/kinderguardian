@@ -32,7 +32,6 @@ export default function SignInPage() {
   const onSubmit = async (data: LoginSchemaType) => {
     try {
       setIsLoading(true);
-
       const result = await login(data);
 
       if (result.error) {
@@ -42,17 +41,20 @@ export default function SignInPage() {
 
       toast.success("Signed in successfully!");
 
-      // Redirect based on user type
+      // Handle redirection based on user type and setup status
       if (result.data?.userType === "parent") {
         router.push("/parent");
       } else if (result.data?.userType === "kindergarten") {
-        const route = result.data?.kindergartenName
-          ? `/kindergarten/${result.data.kindergartenName}/dashboard`
-          : "/kindergarten/setup";
-        router.push(route);
+        if (result.data.needsSetup) {
+          router.push("/setup");
+        } else {
+          router.push(
+            `/kindergarten/${result.data.data.kindergartenId}/dashboard`
+          );
+        }
       }
     } catch (error) {
-      toast.error("Failed to sign-in");
+      toast.error("Failed to sign in");
     } finally {
       setIsLoading(false);
     }

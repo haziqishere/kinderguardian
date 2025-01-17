@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { EventSchema, EventSchemaType } from "@/actions/event/schema";
 import { createEvent } from "@/actions/event";
 import { toast } from "sonner";
+import { useCreateEvent } from "@/hooks/useEvents";
 import { UserType } from "@prisma/client";
 
 import {
@@ -38,7 +39,8 @@ interface EventFormDialogProps {
 export function EventFormDialog({ classes }: EventFormDialogProps) {
   const { orgId } = useParams();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const createEventMutation = useCreateEvent();
 
   const form = useForm<EventSchemaType>({
     resolver: zodResolver(EventSchema),
@@ -56,23 +58,16 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
   });
 
   const onSubmit = async (data: EventSchemaType) => {
-    try {
-      setLoading(true);
-      const response = await createEvent(data);
-
-      if (response.error) {
-        toast.error(response.error);
-        return;
-      }
-
-      toast.success("Event created successfully");
-      setOpen(false);
-      form.reset();
-    } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    createEventMutation.mutate(data, {
+      onSuccess: () => {
+        setOpen(false);
+        form.reset();
+        toast.success("Event created successfully");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to create event");
+      },
+    });
   };
 
   return (
@@ -204,11 +199,12 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
                 variant="outline"
                 onClick={() => setOpen(false)}
                 type="button"
+                disabled={createEventMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Event"}
+              <Button type="submit" disabled={createEventMutation.isPending}>
+                {createEventMutation.isPending ? "Creating..." : "Create Event"}
               </Button>
             </div>
           </form>

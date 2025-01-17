@@ -28,19 +28,31 @@ export async function POST(request: Request) {
     const admin = await db.admin.findUnique({
       where: { firebaseId },
       include: {
-        kindergarten: {
-          select: { name: true }
-        }
+        kindergarten: true
       }
     });
 
     if (admin) {
       console.log("Found admin user:", admin);
+      const needsSetup = !admin.kindergartenId;
+      const redirectTo = needsSetup 
+        ? "/setup" 
+        : `/kindergarten/${admin.kindergartenId}/dashboard`;
+
       return NextResponse.json({
         success: true,
         userType: "kindergarten",
+        needsSetup: needsSetup,
         userId: admin.id,
-        kindergartenName: admin.kindergarten?.name
+        redirectTo: redirectTo,
+        data: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          kindergartenId: admin.kindergartenId,
+          needsSetup: needsSetup
+        }
       });
     }
 

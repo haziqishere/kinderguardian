@@ -27,20 +27,16 @@ export async function POST(request: Request) {
     // Check for admin
     const admin = await db.admin.findUnique({
       where: { firebaseId },
-      select: {
-        id: true,
-        role: true,
-        kindergarten: {
-          select: { name: true }
+      include : {
+        kindergarten: true
         }
-      }
     });
 
     if (admin) {
       return NextResponse.json({
         userType: "kindergarten",
         userId: admin.id,
-        kindergartenName: admin.kindergarten?.name
+        kindergartenId: admin.kindergartenId
       });
     }
 
