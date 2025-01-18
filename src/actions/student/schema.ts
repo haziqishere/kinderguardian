@@ -1,16 +1,24 @@
 import { z } from "zod";
 
-export const StudentSchema = z.object({
-  id: z.string().optional(),
-  fullName: z.string().min(1, "Full name is required"),
-  age: z.number().min(2, "Age must be at least 2").max(12, "Age cannot exceed 12"),
-  classId: z.string().min(1, "Class is required"),
-  parentId: z.string().min(1, "Parent is required"),
-  faceImageFront: z.string().optional(),
-  faceImageLeft: z.string().optional(),
-  faceImageRight: z.string().optional(),
-  faceImageTiltUp: z.string().optional(),
-  faceImageTiltDown: z.string().optional(),
+const phoneNumberSchema = z.string().regex(/^01\d{8,9}$/, "Invalid Malaysian phone number format");
+
+// Sub-schemas for each step
+export const basicInfoSchema = z.object({
+    fullName: z.string().min(1, "Full name is required"),
+    age: z.coerce.number().min(1, "Age must be atleast 1").max(6, "Age must not exceed 6"),
+    classId: z.string().min(1, "Class is required"),
+    parentId: z.string().min(1, "Parent information is required"),
+    phoneNumbers: z.array(phoneNumberSchema).min(1, "At least one phone number is required"),
+});
+
+export const faceImageSchema = z.object({
+    faceImages: z.object({
+        front: z.string().optional(),
+        left: z.string().optional(),
+        right: z.string().optional(),
+        tiltUp: z.string().optional(),
+        tiltDown: z.string().optional()
+    }).optional()
 });
 
 export const StudentWithClassSchema = StudentSchema.extend({

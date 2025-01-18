@@ -2,91 +2,49 @@
 import { db } from "@/lib/db";
 import { StudentSchema, StudentSchemaType } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
-import { z } from "zod";
 
-// Get all students for a kindergarten
-export const getStudents = async (kindergartenId: string) => {
-  try {
-    const students = await db.student.findMany({
-      where: {
-        class: {
-          kindergartenId
-        }
-      },
-      include: {
-        class: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        attendance: {
-          orderBy: {
-            date: 'desc'
-          },
-          take: 30 // Last 30 days for attendance calculation
-        }
-      },
-      orderBy: {
-        fullName: 'asc'
-      }
-    });
+import { uploadStudentImage } from "@/lib/s3-client";
 
-    // Calculate attendance performance
-    const studentsWithPerformance = students.map(student => {
-      const totalDays = student.attendance.length;
-      const presentDays = student.attendance.filter(
-        a => a.status === 'ON_TIME' || a.status === 'LATE'
-      ).length;
-      const attendancePerformance = totalDays > 0 
-        ? ((presentDays / totalDays) * 100).toFixed(1) + '%'
-        : 'N/A';
+const handler = async (data: AddChildSchemaType) => {
+    try {
+        // First upload all images to S3
+        const imageKeys = {
+            front: data.faceImages?.front ? 
+                await uploadStudentImage(data.parentId, data.faceImages.front, 'front') : undefined,
+            left: data.faceImages?.left ?
+                await uploadStudentImage(data.parentId, data.faceImages.left, 'left') : undefined,
+            right: data.faceImages?.right ?
+                await uploadStudentImage(data.parentId, data.faceImages.right, 'right') : undefined,
+            tiltUp: data.faceImages?.tiltUp ?
+                await uploadStudentImage(data.parentId, data.faceImages.tiltUp, 'tiltUp') : undefined,
+            tiltDown: data.faceImages?.tiltDown ?
+                await uploadStudentImage(data.parentId, data.faceImages.tiltDown, 'tiltDown') : undefined,
+        };
 
-      if (!student.class) {
-        throw new Error(`Student ${student.id} has no assigned class`);
-      }
+        // Create student record with S3 keys
+        const student = await db.student.create({
+            data: {
+                fullName: data.fullName,
+                age: data.age,
+                classId: data.classId,
+                parentId: data.parentId,
+                faceImageFront: imageKeys.front,
+                faceImageLeft: imageKeys.left,
+                faceImageRight: imageKeys.right,
+                faceImageTiltUp: imageKeys.tiltUp,
+                faceImageTiltDown: imageKeys.tiltDown,
+                phoneNumbers: {
+                    create: data.phoneNumbers.map(number => ({
+                        phoneNumber: number
+                    }))
+                }
+            }
+        });
 
-      return {
-        id: student.id,
-        name: student.fullName,
-        age: student.age,
-        class: student.class.name,
-        daysAbsent: student.daysAbsent,
-        attendancePerformance
-      };
-    });
-
-    return { data: studentsWithPerformance };
-  } catch (error) {
-    console.error("[GET_STUDENTS]", error);
-    return { error: "Failed to fetch students" };
-  }
-};
-
-// Get a single student
-export const getStudent = async (studentId: string) => {
-  try {
-    const student = await db.student.findUnique({
-      where: { id: studentId },
-      include: {
-        class: true,
-        attendance: {
-          orderBy: {
-            date: 'desc'
-          },
-          take: 10,
-        },
-        alertLogs: {
-          orderBy: {
-            alertTime: 'desc'
-          },
-          take: 5,
-        },
-      },
-    });
-
-    if (!student) {
-      return { error: "Student not found" };
+        return { data: student };
+    } catch (error) {
+        console.error('Error creating student:', error);
+        return { error: "Failed to create student." };
     }
 
     return { data: student };
