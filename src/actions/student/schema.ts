@@ -5,7 +5,7 @@ const phoneNumberSchema = z.string().regex(/^01\d{8,9}$/, "Invalid Malaysian pho
 // Sub-schemas for each step
 export const basicInfoSchema = z.object({
     fullName: z.string().min(1, "Full name is required"),
-    age: z.number().min(1).max(6, "Age must be between 0 and 12"),
+    age: z.coerce.number().min(1, "Age must be atleast 1").max(6, "Age must not exceed 6"),
     classId: z.string().min(1, "Class is required"),
     parentId: z.string().min(1, "Parent information is required"),
     phoneNumbers: z.array(phoneNumberSchema).min(1, "At least one phone number is required"),
