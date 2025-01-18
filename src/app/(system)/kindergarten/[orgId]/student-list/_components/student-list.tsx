@@ -38,12 +38,6 @@ export function StudentList({ students }: StudentListProps) {
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Student List</h1>
-          <Button asChild>
-            <Link href={`/kindergarten/${params.orgId}/student-list/new`}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Student
-            </Link>
-          </Button>
         </div>
 
         <div className="flex items-center gap-4 mb-4">
