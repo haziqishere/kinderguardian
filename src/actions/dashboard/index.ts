@@ -1,3 +1,4 @@
+"use server";
 import { db } from "@/lib/db";
 import { Activity } from "@/app/(system)/kindergarten/[orgId]/types";
 import { subMonths, startOfMonth, endOfMonth } from "date-fns";

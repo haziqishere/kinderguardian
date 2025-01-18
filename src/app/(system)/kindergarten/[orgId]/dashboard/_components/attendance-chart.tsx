@@ -1,8 +1,7 @@
+// kindergarten/[orgId]/dashboard/_components/attendance-chart.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,69 +10,51 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
 } from "recharts";
-import { getAttendanceStats } from "@/actions/dashboard";
 
-interface AttendanceData {
-  month: string;
-  value: number;
+interface AttendanceChartProps {
+  data: {
+    month: string;
+    rate: number;
+  }[];
 }
 
-interface AttendanceStats {
-  date: Date;
-  attendanceRate: number;
-}
-
-export const AttendanceChart = () => {
-  const { orgId } = useParams();
-  const [data, setData] = useState<AttendanceData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAttendanceStats = async () => {
-      try {
-        const result = await getAttendanceStats(orgId as string);
-        if (result.data) {
-          // Transform the data into the format we need
-          const chartData = result.data.map((stat: AttendanceStats) => ({
-            month: new Date(stat.date).toLocaleString("default", {
-              month: "short",
-            }),
-            value: Math.round(stat.attendanceRate * 100),
-          }));
-          setData(chartData);
-        }
-      } catch (error) {
-        console.error("Error fetching attendance stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAttendanceStats();
-  }, [orgId]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
+export const AttendanceChart = ({ data }: AttendanceChartProps) => {
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="h-[300px]">
+      <CardHeader>
+        <CardTitle>Attendance Trends (Last 6 Months)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
+            <LineChart
+              data={data}
+              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip
+                formatter={(value: number) => [
+                  `${value.toFixed(1)}%`,
+                  "Attendance Rate",
+                ]}
+              />
+              <Legend />
               <Line
                 type="monotone"
-                dataKey="value"
-                stroke="#4F46E5"
+                dataKey="rate"
+                name="Attendance Rate"
+                stroke="#2563eb"
                 strokeWidth={2}
                 dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
+                activeDot={{ r: 8 }}
               />
             </LineChart>
           </ResponsiveContainer>
