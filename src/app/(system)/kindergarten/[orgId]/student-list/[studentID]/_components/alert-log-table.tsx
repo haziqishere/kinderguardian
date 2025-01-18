@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 interface AlertLogTableProps {
-  alertLogs: any[]; // Type this properly
+  alertLogs: any[];
 }
 
 export function AlertLogTable({ alertLogs }: AlertLogTableProps) {

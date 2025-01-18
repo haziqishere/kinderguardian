@@ -2,7 +2,7 @@
 import { DataTable } from "./data-table";
 import { respondedColumns } from "../alert-list/_components/alert-table/responded-columns";
 import { awaitingColumns } from "../alert-list/_components/alert-table/awaiting-columns";
-import { AlertStudent } from "../alert-list/_components/alert-table/types";
+import { AlertStudent } from "@/types/alert";
 import { Card, CardContent } from "@/components/ui/card";
 
 type AlertListProps = {

@@ -2,10 +2,7 @@
 
 import { DataTable } from "../../_components/data-table";
 import { Student, columns } from "./columns";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Select,

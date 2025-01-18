@@ -4,7 +4,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, getColorClasses } from "@/lib/utils";
 import { GraduationCap, Clock, Users, AlertTriangle } from "lucide-react";
-import { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   icon: React.ReactNode;

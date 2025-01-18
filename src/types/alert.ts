@@ -1,4 +1,4 @@
-// types/alerts.ts
+// lib/types/alert.ts
 import { AlertType, ParentAction } from "@prisma/client";
 
 export interface AlertStudent {
@@ -9,4 +9,9 @@ export interface AlertStudent {
   parentAction: ParentAction;
   alertStatus: AlertType;
   reason?: string;
+}
+
+export interface AlertsData {
+  responded: AlertStudent[];
+  awaiting: AlertStudent[];
 }

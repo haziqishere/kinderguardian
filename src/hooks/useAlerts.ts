@@ -1,24 +1,9 @@
 // hooks/useAlerts.ts
 import { useQuery } from "@tanstack/react-query";
-import { AlertType, ParentAction } from "@prisma/client";
-
-export interface AlertStudent {
-  id: string;
-  name: string;
-  class: string;
-  attendancePerformance: string;
-  parentAction: ParentAction;
-  alertStatus: AlertType;
-  reason?: string;
-}
-
-export interface AlertsData {
-  responded: AlertStudent[];
-  awaiting: AlertStudent[];
-}
+import { AlertsData } from "@/types/alert";
 
 export function useAlerts(kindergartenId: string) {
-  return useQuery({  // Remove the generic type parameter
+  return useQuery<AlertsData>({  
     queryKey: ['alerts', kindergartenId],
     queryFn: async () => {
       const response = await fetch(`/api/kindergarten/${kindergartenId}/alerts`);
