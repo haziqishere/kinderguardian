@@ -1,4 +1,4 @@
-import {z} from "zod";
+import { z } from "zod";
 
 const phoneNumberSchema = z.string().regex(/^01\d{8,9}$/, "Invalid Malaysian phone number format");
 
@@ -21,18 +21,12 @@ export const faceImageSchema = z.object({
     }).optional()
 });
 
-export const consentSchema = z.object({
-    consent: z.boolean(),
-    dataPermission: z.boolean()
+export const StudentWithClassSchema = StudentSchema.extend({
+  class: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
 });
 
-// Combined schema for the entire form
-export const AddChildSchema = basicInfoSchema
-    .merge(faceImageSchema)
-    .merge(consentSchema);
-
-
-export type AddChildSchemaType = z.infer<typeof AddChildSchema>;
-export type BasicInfoSchemaType = z.infer<typeof basicInfoSchema>;
-export type FaceImageSchemaType = z.infer<typeof faceImageSchema>;
-export type ConsentSchemaTYpe = z.infer<typeof consentSchema>;
+export type StudentSchemaType = z.infer<typeof StudentSchema>;
+export type StudentWithClassSchemaType = z.infer<typeof StudentWithClassSchema>;

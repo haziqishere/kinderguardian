@@ -1,0 +1,324 @@
+### Report Generation
+**Files**:
+- **Actions**: `src/actions/report/`
+  - `index.ts`
+  - `schema.ts`
+- **API Routes**: `src/app/api/kindergarten/[orgId]/report/`
+  - `route.ts`
+- **Hooks**: 
+  - `useReport.ts`
+  - `useReportGeneration.ts`
+- **Types**:
+  - `report.ts`
+
+**Purpose**: Generate comprehensive reports on student attendance, performance, and class statistics.
+
+**Functionality**:
+- Filter students by class and search criteria
+- Generate printable reports with student information
+- Display attendance statistics and performance metrics
+- Include parent contact information
+- Support for exporting reports
+
+**Implementation**:
+
+types/report.ts:
+```typescript
+// types/report.ts
+export interface StudentReport {
+  id: string;
+  name: string;
+  class: string;
+  age: number;
+  attendance: string;
+  lateCount: number;
+  absentCount: number;
+  parentName: string;
+  parentPhone: string;
+}
+
+export interface ClassReport {
+  id: string;
+  name: string;
+  students: StudentReport[];
+}
+
+export interface ReportFilters {
+  classId?: string;
+  searchQuery?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+```
+
+actions/report/index.ts:
+```typescript
+// src/actions/report/index.ts
+"use server";
+
+import { db } from "@/lib/db";
+import { ReportFilters } from "@/types/report";
+
+export async function generateReport(kindergartenId: string, filters: ReportFilters) {
+  try {
+    const students = await db.student.findMany({
+      where: {
+        class: {
+          kindergartenId,
+          ...(filters.classId ? { id: filters.classId } : {})
+        },
+        ...(filters.searchQuery ? {
+          OR: [
+            { fullName: { contains: filters.searchQuery, mode: 'insensitive' } },
+            { parent: { fullName: { contains: filters.searchQuery, mode: 'insensitive' } } }
+          ]
+        } : {})
+      },
+      include: {
+        class: true,
+        parent: true,
+        attendance: {
+          where: {
+            date: {
+              gte: filters.startDate,
+              lte: filters.endDate
+            }
+          }
+        }
+      }
+    });
+
+    const reportData = students.map(student => {
+      const totalAttendance = student.attendance.length;
+      const presentCount = student.attendance.filter(a => 
+        a.status === "ON_TIME" || a.status === "LATE"
+      ).length;
+      const lateCount = student.attendance.filter(a => a.status === "LATE").length;
+      const absentCount = student.attendance.filter(a => a.status === "ABSENT").length;
+
+      return {
+        id: student.id,
+        name: student.fullName,
+        class: student.class.name,
+        age: student.age,
+        attendance: totalAttendance > 0 
+          ? `${Math.round((presentCount / totalAttendance) * 100)}%` 
+          : "N/A",
+        lateCount,
+        absentCount,
+        parentName: student.parent.fullName,
+        parentPhone: student.parent.phoneNumber
+      };
+    });
+
+    return { data: reportData };
+  } catch (error) {
+    console.error("[GENERATE_REPORT_ERROR]:", error);
+    return { error: "Failed to generate report" };
+  }
+}
+```
+
+hooks/useReport.ts:
+```typescript
+// hooks/useReport.ts
+import { useQuery } from "@tanstack/react-query";
+import { ReportFilters, StudentReport } from "@/types/report";
+
+export function useReport(kindergartenId: string, filters: ReportFilters) {
+  return useQuery({
+    queryKey: ['report', kindergartenId, filters],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (filters.classId) searchParams.append('classId', filters.classId);
+      if (filters.searchQuery) searchParams.append('search', filters.searchQuery);
+      if (filters.startDate) searchParams.append('startDate', filters.startDate.toISOString());
+      if (filters.endDate) searchParams.append('endDate', filters.endDate.toISOString());
+
+      const response = await fetch(
+        `/api/kindergarten/${kindergartenId}/report?${searchParams.toString()}`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch report data');
+      }
+
+      return response.json() as Promise<StudentReport[]>;
+    }
+  });
+}
+```
+
+### Profile Management
+**Files**:
+- **Actions**: `src/actions/admin/`
+  - `index.ts`
+  - `schema.ts`
+- **API Routes**: `src/app/api/auth/`
+  - `profile/route.ts`
+- **Hooks**: 
+  - `useProfile.ts`
+  - `use-action.ts`
+- **Types**:
+  - `admin.ts`
+
+**Purpose**: Manage user profile information and account settings for both administrators and parents.
+
+**Functionality**:
+- View and update profile information
+- Manage account settings
+- Handle kindergarten association
+- Leave kindergarten functionality for admins
+- View roles and permissions
+
+**Implementation**:
+
+profile/route.ts:
+```typescript
+// app/api/auth/profile/route.ts
+import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+export async function POST(req: Request) {
+  try {
+    const { firebaseId } = await req.json();
+
+    if (!firebaseId) {
+      return NextResponse.json(
+        { error: "Firebase ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const admin = await db.admin.findUnique({
+      where: { firebaseId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        kindergartenId: true,
+      },
+    });
+
+    if (!admin) {
+      return NextResponse.json(
+        { error: "Admin not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(admin);
+  } catch (error) {
+    console.error("[PROFILE_ERROR]", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+actions/admin/index.ts:
+```typescript
+// actions/admin/index.ts
+"use server"
+
+import { db } from "@/lib/db";
+import { z } from "zod";
+import { createSafeAction } from "@/lib/create-safe-action";
+
+const LeaveKindergartenSchema = z.object({
+  adminId: z.string()
+});
+
+const leaveKindergartenHandler = async (data: z.infer<typeof LeaveKindergartenSchema>) => {
+  try {
+    // Check if admin exists
+    const admin = await db.admin.findUnique({
+      where: { id: data.adminId }
+    });
+
+    if (!admin) {
+      return { error: "Admin not found" };
+    }
+
+    // Remove kindergarten association
+    const updatedAdmin = await db.admin.update({
+      where: { id: data.adminId },
+      data: {
+        kindergartenId: null,
+        role: "ADMIN" // Reset role to default
+      }
+    });
+
+    return { data: updatedAdmin };
+  } catch (error) {
+    return { error: "Failed to leave kindergarten" };
+  }
+};
+
+export const leaveKindergarten = createSafeAction(
+  LeaveKindergartenSchema,
+  leaveKindergartenHandler
+);
+```
+
+use-action.ts:
+```typescript
+// hooks/use-action.ts
+import { useState, useCallback } from 'react';
+import { ActionState, FieldErrors } from '@/lib/create-safe-action';
+
+type Action<TInput, TOutput> = (data: TInput) => Promise<ActionState<TInput, TOutput>>;
+
+interface UseActionOptions<TOutput> {
+    onSuccess?: (data: TOutput) => void;
+    onError?: (error: string) => void;
+    onComplete?: () => void;
+}
+
+export const useAction = <TInput, TOutput>(
+    action: Action<TInput, TOutput>,
+    options: UseActionOptions<TOutput> = {}
+) => {
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors<TInput> | undefined>(undefined);
+    const [error, setError] = useState<string | undefined>(undefined);
+    const [data, setData] = useState<TOutput | undefined>(undefined);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const execute = useCallback(
+        async (input: TInput) => {
+            setIsLoading(true);
+            try {
+                const result = await action(input);
+                if (!result) return;
+
+                if (result.error) {
+                    setError(result.error);
+                    options.onError?.(result.error);
+                }
+
+                if (result.data) {
+                    setData(result.data);
+                    options.onSuccess?.(result.data);
+                }
+
+                setFieldErrors(result.fieldErrors);
+            } finally {
+                setIsLoading(false);
+                options.onComplete?.();
+            }
+        },
+        [action, options]
+    );
+
+    return {
+        execute,
+        fieldErrors,
+        error,
+        data,
+        isLoading,
+    };
+};
+```

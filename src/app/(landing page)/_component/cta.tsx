@@ -28,7 +28,7 @@ const CallToAction = () => {
             </p>
             <div className="mt-11 flex flex-col justify-start gap-2 sm:flex-row">
               <RainbowButton>
-                <Link href="/dashboard">Get Started!</Link>
+                <Link href="/sign-in">Get Started!</Link>
               </RainbowButton>
             </div>
           </div>

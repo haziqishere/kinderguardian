@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -24,6 +21,10 @@ enum AttendanceStatus {
 enum AlertType {
   MESSAGED
   CALLED
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
 }
 
 enum ParentAction {
@@ -47,10 +48,31 @@ enum AdminRole {
   TEACHER
 }
 
+enum EventType {
+  ACTIVITY
+  HOLIDAY
+  MEETING
+  OTHER
+}
+
+enum UserType {
+  ALL
+  PARENT
+  TEACHER
+  ADMIN
+  STUDENT
+}
+
+enum AttendeeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 // Main entity models
 model Kindergarten {
   id                    String           @id @default(uuid())
-  name                  String
+  name                  String           @unique
   address               String
   messageAlertThreshold DateTime         @db.Time() // Time of day for first alert
   callAlertThreshold    DateTime         @db.Time() // Time of day for call alert
@@ -58,6 +80,8 @@ model Kindergarten {
   operatingHours        OperatingHours[]
   classes               Class[]
   admins                Admin[]
+  alerts                Alert[] // New relation
+  events                Event[] // New relation
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 
@@ -117,13 +141,15 @@ model Student {
 }
 
 model Parent {
-  id        String    @id @default(uuid())
-  clerkId   String    @unique
-  students  Student[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(uuid())
+  firebaseId String    @unique
+  email      String    @unique
+  name       String
+  students   Student[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  @@index([clerkId])
+  @@index([firebaseId])
 }
 
 model ParentPhoneNumber {
@@ -172,21 +198,74 @@ model AlertLog {
   @@index([alertType])
 }
 
-model Event {
-  id                   String       @id @default(uuid())
-  title                String
-  dateTime             DateTime
-  description          String
-  location             String
-  cost                 Decimal      @db.Decimal(10, 2)
-  requiredItems        String?      @db.Text
-  teacherInChargeName  String?
-  teacherInChargePhone String?
-  classes              ClassEvent[]
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+model Admin {
+  id             String        @id @default(uuid())
+  firebaseId     String        @unique
+  email          String        @unique
+  name           String
+  role           AdminRole     @default(ADMIN)
+  kindergarten   Kindergarten? @relation(fields: [kindergartenId], references: [id])
+  kindergartenId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  @@index([dateTime])
+  @@index([kindergartenId])
+  @@index([firebaseId])
+}
+
+// New models for dashboard functionality
+model Alert {
+  id             String       @id @default(uuid())
+  title          String
+  message        String
+  type           AlertType
+  kindergartenId String
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id], onDelete: Cascade)
+  targetUserType UserType
+  isRead         Boolean      @default(false)
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([kindergartenId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([targetUserType])
+}
+
+model Event {
+  id             String       @id @default(uuid())
+  title          String
+  description    String
+  startDate      DateTime
+  endDate        DateTime
+  location       String
+  type           EventType
+  kindergartenId String
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id], onDelete: Cascade)
+  targetAudience UserType[]
+  isAllDay       Boolean      @default(false)
+  attendees      Attendee[]
+  classes        ClassEvent[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([kindergartenId])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model Attendee {
+  id        String         @id @default(uuid())
+  name      String
+  type      UserType
+  status    AttendeeStatus
+  eventId   String
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([eventId])
 }
 
 model ClassEvent {
@@ -198,17 +277,4 @@ model ClassEvent {
   @@id([classId, eventId])
   @@index([classId])
   @@index([eventId])
-}
-
-model Admin {
-  id             String       @id @default(uuid())
-  clerkId        String       @unique
-  role           AdminRole
-  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
-  kindergartenId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([kindergartenId])
-  @@index([clerkId])
 }

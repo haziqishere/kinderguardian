@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/lib/db";
 import { AttendanceSchema, AttendanceSchemaType } from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
