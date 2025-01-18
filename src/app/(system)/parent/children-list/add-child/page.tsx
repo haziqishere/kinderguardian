@@ -29,33 +29,39 @@ const STEPS = {
 
 type PhotoType = "front" | "left" | "right" | "tiltUp" | "tiltDown";
 
-const PHOTO_CONFIGS = {
+interface PhotoConfig {
+  type: PhotoType;
+  title: string;
+  instruction: string;
+}
+
+const PHOTO_CONFIGS: Record<number, PhotoConfig> = {
   [STEPS.FRONT_PHOTO]: {
-    type: "front" as PhotoType,
+    type: "front",
     title: "Front View Photo",
     instruction: "Look straight at the camera with a neutral expression",
   },
   [STEPS.LEFT_PHOTO]: {
-    type: "left" as PhotoType,
+    type: "left",
     title: "Left Side Photo",
     instruction: "Turn your head 90 degrees to your left side",
   },
   [STEPS.RIGHT_PHOTO]: {
-    type: "right" as PhotoType,
+    type: "right",
     title: "Right Side Photo",
     instruction: "Turn your head 90 degrees to your right side",
   },
   [STEPS.TOP_PHOTO]: {
-    type: "tiltUp" as PhotoType,
+    type: "tiltUp",
     title: "Face Tilted Up Photo",
     instruction: "Tilt your head slightly upward while looking at camera",
   },
   [STEPS.BOTTOM_PHOTO]: {
-    type: "tiltDown" as PhotoType,
+    type: "tiltDown",
     title: "Face Tilted Down Photo",
     instruction: "Tilt your head slightly downward while looking at camera",
   },
-} as const;
+};
 
 type StepKeys = keyof typeof STEPS;
 type StepValues = (typeof STEPS)[StepKeys];
