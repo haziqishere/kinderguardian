@@ -1,6 +1,6 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { AlertStudent } from "./types";
+import { AlertStudent } from "@/types/alert";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Phone } from "lucide-react";
 import {

@@ -1,76 +1,49 @@
+// app/kindergarten/[orgId]/alert-list/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { AlertList } from "../_components/alert-list";
-import { getAlerts } from "@/actions/alert";
-import { Alert, AlertType } from "@prisma/client";
+import { useAlerts } from "@/hooks/useAlerts";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
-type AlertStatus = "Messaged" | "Called";
+export default function AlertListPage({
+  params,
+}: {
+  params: { orgId: string };
+}) {
+  const { data, isLoading, error } = useAlerts(params.orgId);
 
-interface AlertStudent {
-  id: string;
-  name: string;
-  class: string;
-  attendancePerformance: string;
-  parentAction: "Responded" | "No Response";
-  alertStatus: AlertStatus;
-  reason?: string;
-}
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-10 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+            <p className="text-muted-foreground mt-2">Loading alerts...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-export default function AlertListPage() {
-  const { orgId } = useParams();
-  const [respondedData, setRespondedData] = useState<AlertStudent[]>([]);
-  const [awaitingData, setAwaitingData] = useState<AlertStudent[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const result = await getAlerts(orgId as string, "ADMIN");
-        if (result.data) {
-          // For now, we'll use the alert title as the student name and message as reason
-          const responded = result.data
-            .filter((alert) => alert.isRead)
-            .map((alert) => ({
-              id: alert.id,
-              name: alert.title,
-              class: "N/A", // We'll need to add this to the alert model
-              attendancePerformance: "99.5%", // TODO: Calculate from attendance data
-              parentAction: "Responded" as const,
-              alertStatus: "Messaged" as AlertStatus,
-              reason: alert.message,
-            }));
-
-          const awaiting = result.data
-            .filter((alert) => !alert.isRead)
-            .map((alert) => ({
-              id: alert.id,
-              name: alert.title,
-              class: "N/A", // We'll need to add this to the alert model
-              attendancePerformance: "99.5%", // TODO: Calculate from attendance data
-              parentAction: "No Response" as const,
-              alertStatus: "Called" as AlertStatus,
-            }));
-
-          setRespondedData(responded);
-          setAwaitingData(awaiting);
-        }
-      } catch (error) {
-        console.error("Error fetching alerts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAlerts();
-  }, [orgId]);
-
-  if (loading) {
-    return <div>Loading...</div>;
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-10 text-center text-destructive">
+            Failed to load alerts
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <AlertList respondedData={respondedData} awaitingData={awaitingData} />
+    <div className="p-6">
+      <AlertList
+        respondedData={data?.responded || []}
+        awaitingData={data?.awaiting || []}
+      />
+    </div>
   );
 }

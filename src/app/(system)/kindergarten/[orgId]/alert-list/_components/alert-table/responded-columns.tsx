@@ -1,6 +1,6 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { AlertStudent } from "./types";
+import { AlertStudent } from "@/types/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const respondedColumns: ColumnDef<AlertStudent>[] = [
