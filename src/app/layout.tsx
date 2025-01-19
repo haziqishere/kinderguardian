@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 import "../lib/polyfills";
 import "./globals.css";
 import { siteConfig } from "@/app/config/site";
-import Providers from "./providers";
+import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
