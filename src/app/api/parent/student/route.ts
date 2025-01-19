@@ -6,9 +6,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-
-   
-
+  
     // Calculate age from date of birth
     const age = new Date().getFullYear() - new Date(data.dateOfBirth).getFullYear();
 
@@ -31,12 +29,32 @@ export async function POST(request: Request) {
       });
 
        // Upload images using new student's ID
-      const imageKeys = await Promise.all([
-        data.faceImages.front && uploadStudentImage(data.parentId, data.faceImages.front, 'front'),
-        data.faceImages.left && uploadStudentImage(data.parentId, data.faceImages.left, 'left'),
-        data.faceImages.right && uploadStudentImage(data.parentId, data.faceImages.right, 'right'),
-        data.faceImages.tiltUp && uploadStudentImage(data.parentId, data.faceImages.tiltUp, 'tiltUp'),
-        data.faceImages.tiltDown && uploadStudentImage(data.parentId, data.faceImages.tiltDown, 'tiltDown')
+       const imageKeys = await Promise.all([
+        data.faceImages.front && uploadStudentImage(
+          newStudent.id,  // Use student ID instead of parent ID
+          data.faceImages.front, 
+          'front'
+        ),
+        data.faceImages.left && uploadStudentImage(
+          newStudent.id, 
+          data.faceImages.left, 
+          'left'
+        ),
+        data.faceImages.right && uploadStudentImage(
+          newStudent.id, 
+          data.faceImages.right, 
+          'right'
+        ),
+        data.faceImages.tiltUp && uploadStudentImage(
+          newStudent.id, 
+          data.faceImages.tiltUp, 
+          'tiltUp'
+        ),
+        data.faceImages.tiltDown && uploadStudentImage(
+          newStudent.id, 
+          data.faceImages.tiltDown, 
+          'tiltDown'
+        )
       ]);
 
       // Update student with image paths

@@ -154,7 +154,7 @@ model Parent {
 
 model ParentPhoneNumber {
   id          String   @id @default(uuid())
-  phoneNumber String   @unique
+  phoneNumber String
   student     Student  @relation(fields: [studentId], references: [id])
   studentId   String
   createdAt   DateTime @default(now())
@@ -164,6 +164,7 @@ model ParentPhoneNumber {
   // Pattern: ^01\d{8,9}$
 
   @@index([studentId])
+  @@index([phoneNumber]) // Add index for better query performance
 }
 
 model Attendance {
