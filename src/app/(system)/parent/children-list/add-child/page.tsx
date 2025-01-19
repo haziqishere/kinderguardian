@@ -1,7 +1,7 @@
 // parent/children-list/add-child/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
@@ -16,6 +16,7 @@ import { ProgressBar } from "./_components/progress-bar";
 import { FormButtons } from "./_components/form-button";
 import { LoadingDialog } from "./_components/loading-dialog";
 import { StudentSchema, StudentSchemaType } from "@/actions/student/schema";
+import { getCurrentUser } from "@/lib/firebase/auth";
 
 const STEPS = {
   BASIC_INFO: 0,
@@ -108,6 +109,7 @@ const validateImageData = (
 export default function AddChildPage() {
   const router = useRouter();
   const [step, setStep] = useState<StepValues>(STEPS.BASIC_INFO);
+  const [isLoadingParent, setIsLoadingParent] = useState(true);
   const [photos, setPhotos] = useState<Record<PhotoType, string>>({
     front: "",
     left: "",
@@ -124,7 +126,7 @@ export default function AddChildPage() {
       dateOfBirth: new Date(),
       kindergartenId: "",
       classId: "",
-      parentId: "7e273ded-3efd-4361-a68e-7c585cbb1e60", // TODO: Get from auth
+      parentId: "",
       phoneNumbers: [""],
       faceImages: {
         front: "",
@@ -137,6 +139,49 @@ export default function AddChildPage() {
       dataPermission: false,
     },
   });
+
+  //Fetch parent id from auth
+  useEffect(() => {
+    const fetchParentId = async () => {
+      try {
+        const firebaseId = await getCurrentUser();
+
+        // Fetch parent ID from database
+        const response = await fetch("/api/parent/get-id", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ firebaseId }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch parent ID");
+        }
+
+        const data = await response.json();
+        form.setValue("parentId", data.parentId);
+        setIsLoadingParent(false);
+      } catch (error) {
+        console.error("Error fetching parent ID", error);
+        toast.error("Error loading parent information");
+        router.push("/parent/children-list"); //Redirect on error
+      }
+    };
+    fetchParentId();
+  }),
+    [form, router];
+
+  //Don't render form until parent ID is loaded
+  if (isLoadingParent) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <LoadingDialog open={true} />
+        </div>
+      </div>
+    );
+  }
 
   const validatePhoto = (photoData: string, type: PhotoType) => {
     const validation = validateImageData(photoData);
