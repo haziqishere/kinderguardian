@@ -1,7 +1,8 @@
 // parent/_components/dashboard-stats.tsx
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Users, Bell, MessageSquareWarning } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Clock, UserX } from "lucide-react";
+import { TotalChildren } from "./total-children";
 
 interface ChildStats {
   lateCount: number;
@@ -15,64 +16,26 @@ interface DashboardStatsProps {
 
 export const DashboardStats = ({ childStats }: DashboardStatsProps) => {
   return (
-    <div className="grid grid-cols-4 gap-6 mb-8">
+    <div className="grid gap-4 md:grid-cols-3 mb-8">
+      <TotalChildren />
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-2 bg-blue-100 rounded">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Total Children</div>
-              <div className="text-2xl font-bold">1</div>
-            </div>
-          </div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Late Count</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{childStats.lateCount}</div>
         </CardContent>
       </Card>
-
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-2 bg-yellow-100 rounded">
-              <Bell className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Late This Month</div>
-              <div className="text-2xl font-bold">{childStats.lateCount}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-2 bg-green-100 rounded">
-              <Users className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Monthly Attendance</div>
-              <div className="text-2xl font-bold">
-                {childStats.attendanceRate}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-2 bg-red-100 rounded">
-              <MessageSquareWarning className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Absent No Reason</div>
-              <div className="text-2xl font-bold">
-                {childStats.absentNoReason}
-              </div>
-            </div>
-          </div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">
+            Absent (No Reason)
+          </CardTitle>
+          <UserX className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{childStats.absentNoReason}</div>
         </CardContent>
       </Card>
     </div>
