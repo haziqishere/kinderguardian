@@ -73,7 +73,7 @@ const handler = async (data: StudentSchemaType) => {
       for (const type of imageTypes) {
         const imageData = data.faceImages[type];
         if (imageData) {
-          const key = await uploadStudentImage(data.parentId, imageData, type);
+          const key = await uploadStudentImage(data.parentId, imageData, type,);
           if (!key) {
             throw new Error(`Failed to upload ${type} image`);
           }
@@ -143,3 +143,60 @@ const handler = async (data: StudentSchemaType) => {
 
 // Remove duplicate handlers and only export the main handler
 export const addChild = createSafeAction(StudentSchema, handler);
+
+// Function to get students by kindergartenId
+export async function getStudents(kindergartenId: string) {
+  try {
+    const students = await db.student.findMany({
+      where: {
+        class: {
+          kindergartenId: kindergartenId,
+        },
+      },
+      include: {
+        class: true,
+        attendance: {
+          orderBy: {
+            date: 'desc',
+          },
+          take: 30, // Last 30 days
+        },
+      },
+    });
+
+    // Transform the data to match the Student interface
+    const formattedStudents = students.map((student) => {
+      // Calculate days absent
+      const daysAbsent = student.attendance.filter(
+        (a) => a.status === "ABSENT"
+      ).length;
+
+      // Calculate attendance performance
+      const totalDays = student.attendance.length;
+      const presentDays = student.attendance.filter(
+        (a) => a.status === "ON_TIME" || a.status === "LATE"
+      ).length;
+      const attendanceRate = totalDays > 0
+        ? ((presentDays / totalDays) * 100).toFixed(1) + "%"
+        : "N/A";
+
+      return {
+        id: student.id,
+        name: student.fullName,
+        age: student.age,
+        class: student.class?.name || "Unassigned",
+        daysAbsent,
+        attendancePerformance: attendanceRate,
+      };
+    });
+
+    return {
+      data: formattedStudents,
+    };
+  } catch (error) {
+    console.error("[GET_STUDENTS]", error);
+    return {
+      error: "Failed to fetch students",
+    };
+  }
+}

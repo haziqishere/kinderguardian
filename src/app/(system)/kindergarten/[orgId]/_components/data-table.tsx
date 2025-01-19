@@ -104,9 +104,14 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  onClick={() =>
-                    router.push(`/kindergarten/${orgId}/student-list/test`)
-                  }
+                  onClick={() => {
+                    const student = row.original as { id: string };
+                    console.log("Navigating to student:", student.id); // Debug log
+                    router.push(
+                      `/kindergarten/${orgId}/student-list/${student.id}`
+                    );
+                  }}
+                  className="cursor-pointer hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

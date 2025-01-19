@@ -9,21 +9,20 @@ export async function GET(
   try {
     const student = await db.student.findUnique({
       where: {
-        id: params.studentId
+        id: params.studentId,
       },
       include: {
         class: true,
         attendance: {
           orderBy: {
-            date: 'desc'
+            date: 'desc',
           },
-          take: 10,
+          take: 30, // Last 30 days
         },
         alertLogs: {
           orderBy: {
-            alertTime: 'desc'
+            alertTime: 'desc',
           },
-          take: 5,
         },
       },
     });
@@ -35,7 +34,24 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: student });
+    // Calculate attendance stats
+    const totalDays = student.attendance.length;
+    const presentDays = student.attendance.filter(
+      (a) => a.status === "ON_TIME" || a.status === "LATE"
+    ).length;
+    const daysAbsent = student.attendance.filter(
+      (a) => a.status === "ABSENT"
+    ).length;
+
+    const formattedStudent = {
+      ...student,
+      daysAbsent,
+      attendanceRate: totalDays > 0
+        ? ((presentDays / totalDays) * 100).toFixed(1)
+        : "N/A",
+    };
+
+    return NextResponse.json({ data: formattedStudent });
   } catch (error) {
     console.error("[STUDENT_GET]", error);
     return NextResponse.json(

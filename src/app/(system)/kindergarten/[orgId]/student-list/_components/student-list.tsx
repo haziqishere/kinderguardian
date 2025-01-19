@@ -21,6 +21,9 @@ export function StudentList({ students }: StudentListProps) {
   const params = useParams();
   const [selectedClass, setSelectedClass] = useState<string>("all");
 
+  // Debug log to check student data
+  console.log("Students data:", students);
+
   // Get unique classes
   const classes = Array.from(new Set(students.map((student) => student.class)));
 

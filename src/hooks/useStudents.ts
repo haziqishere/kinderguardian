@@ -15,11 +15,16 @@ export function useStudents(kindergartenId: string) {
 
 export function useStudent(studentId: string) {
   return useQuery({
-    queryKey: ['student', studentId],
+    queryKey: ["student", studentId],
     queryFn: async () => {
+      if (!studentId) throw new Error("Student ID is required");
+      
       const response = await fetch(`/api/students/${studentId}`);
-      if (!response.ok) throw new Error('Failed to fetch student');
+      if (!response.ok) {
+        throw new Error("Failed to fetch student data");
+      }
       return response.json();
-    }
+    },
+    enabled: !!studentId, // Only run the query if we have a studentId
   });
 }
