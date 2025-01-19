@@ -6,6 +6,7 @@ import "./globals.css";
 import { siteConfig } from "@/app/config/site";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
+import { SessionTimeoutDialog } from "@/components/session-timeout-dialog";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,6 +37,7 @@ export default function RootLayout({
           <Toaster />
           {children}
         </Providers>
+        <SessionTimeoutDialog />
       </body>
     </html>
   );

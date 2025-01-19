@@ -50,19 +50,22 @@ export default function ParentDashboard() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <ChildSwitcher
-          children={
-            children?.map((child) => ({
-              id: child.id,
-              name: child.fullName,
-              class: child.class || { id: "", name: "Unassigned" },
-              imageUrl: `/api/images/${child.id}`,
-            })) || []
-          }
-          selectedChild={selectedChild}
-          onChildChange={handleChildChange}
-          isLoading={isLoading}
-        />
+        <div className="bg-white rounded-md p-2 outline outline-1 outline-gray-200">
+          <ChildSwitcher
+            children={
+              children?.map((child) => ({
+                id: child.id,
+                name: child.fullName,
+                class: child.class || { id: "", name: "Unassigned" },
+                imageUrl: `/api/images/${child.id}`,
+              })) || []
+            }
+            selectedChild={selectedChild}
+            onChildChange={handleChildChange}
+            isLoading={isLoading}
+          />
+        </div>
+
         <Link href="/parent/children-list/add-child">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
