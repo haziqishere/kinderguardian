@@ -1,7 +1,6 @@
-import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -11,12 +10,18 @@ const s3Client = new S3Client({
   },
 });
 
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+if (!BUCKET_NAME) {
+  console.error('AWS_BUCKET_NAME environment variable is not set');
+}
+
 export async function uploadStudentImage(
+  kindergartenId: string,
   studentId: string,
   base64Image: string,
   angle: 'front' | 'left' | 'right' | 'tiltUp' | 'tiltDown'
 ): Promise<string> {
-  const key = `students/${studentId}/${angle}.jpg`;
+  const key = `${kindergartenId}/${studentId}/${angle}.jpg`;
   
   try {
     // Convert base64 to buffer
@@ -76,5 +81,66 @@ export async function getUploadUrl(
   } catch (error) {
     console.error('Error generating upload URL:', error);
     throw new Error('Failed to generate upload URL');
+  }
+}
+
+// Helper function to delete all student images
+export async function deleteStudentImage(
+  kindergartenId: string,
+  studentId: string,
+  imageKey: string
+) {
+  try {
+    if (!BUCKET_NAME) {
+      throw new Error('S3_BUCKET_NAME is not configured');
+    }
+
+    // Get just the filename from the full path
+    const filename = imageKey.split('/').pop();
+    if (!filename) {
+      throw new Error('Invalid image key format');
+    }
+
+    // Construct the correct key with kindergartenId/studentId/filename
+    const key = `${kindergartenId}/${studentId}/${filename}`;
+    
+    console.log('[S3_DELETE] Attempting to delete from bucket:', BUCKET_NAME);
+    console.log('[S3_DELETE] Key:', key);
+    
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
+    await s3Client.send(command);
+    console.log('[S3_DELETE] Successfully deleted:', key);
+    return true;
+  } catch (error) {
+    console.error('[S3_DELETE] Error deleting image:', error);
+    console.error('[S3_DELETE] Failed key:', imageKey);
+    return false;
+  }
+}
+
+export async function deleteAllStudentImages(
+  kindergartenId: string,
+  studentId: string,
+  imageKeys: string[]
+) {
+  try {
+    console.log('[S3_DELETE_ALL] Starting deletion of images for student:', studentId);
+    console.log('[S3_DELETE_ALL] Image keys:', imageKeys);
+    
+    const deletePromises = imageKeys
+      .filter(key => key) // Filter out null/empty keys
+      .map(key => deleteStudentImage(kindergartenId, studentId, key));
+    
+    const results = await Promise.all(deletePromises);
+    console.log('[S3_DELETE_ALL] Deletion results:', results);
+    
+    return results.every(result => result === true);
+  } catch (error) {
+    console.error('[S3_DELETE_ALL] Error deleting all images:', error);
+    return false;
   }
 }

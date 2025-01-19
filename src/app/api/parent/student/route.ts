@@ -25,32 +25,47 @@ export async function POST(request: Request) {
           faceImageRight: null,
           faceImageTiltUp: null,
           faceImageTiltDown: null,
+        },
+        include: {
+          class: {
+            select: {
+              kindergartenId: true
+            }
+          }
         }
       });
+
+      // Get kindergartenId from class relationship
+      const kindergartenId = newStudent.class?.kindergartenId;
 
        // Upload images using new student's ID
        const imageKeys = await Promise.all([
         data.faceImages.front && uploadStudentImage(
-          newStudent.id,  // Use student ID instead of parent ID
+          kindergartenId!,
+          newStudent.id, 
           data.faceImages.front, 
           'front'
         ),
         data.faceImages.left && uploadStudentImage(
+          kindergartenId!,
           newStudent.id, 
           data.faceImages.left, 
           'left'
         ),
         data.faceImages.right && uploadStudentImage(
+          kindergartenId!,
           newStudent.id, 
           data.faceImages.right, 
           'right'
         ),
         data.faceImages.tiltUp && uploadStudentImage(
+          kindergartenId!,
           newStudent.id, 
           data.faceImages.tiltUp, 
           'tiltUp'
         ),
         data.faceImages.tiltDown && uploadStudentImage(
+          kindergartenId!,
           newStudent.id, 
           data.faceImages.tiltDown, 
           'tiltDown'
