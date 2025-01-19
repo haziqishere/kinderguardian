@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { DashboardContent } from "./_components/dashboard-content";
 import { ChildSwitcher, Child } from "./_components/child-switcher";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ export default function ParentDashboard() {
         id: child.id,
         name: child.fullName,
         class: child.class || { id: "", name: "Unassigned" },
-        imageUrl: `/api/images/${child.id}`,
       });
     }
   };

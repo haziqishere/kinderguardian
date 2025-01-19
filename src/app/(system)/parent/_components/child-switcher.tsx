@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export interface Child {
   id: string;
@@ -18,7 +18,6 @@ export interface Child {
     id: string;
     name: string;
   };
-  imageUrl?: string;
 }
 
 interface ChildSwitcherProps {
@@ -34,6 +33,15 @@ export function ChildSwitcher({
   onChildChange,
   isLoading = false,
 }: ChildSwitcherProps) {
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -58,8 +66,9 @@ export function ChildSwitcher({
         <SelectValue>
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={selectedChild?.imageUrl} />
-              <AvatarFallback>{selectedChild?.name?.[0] || "?"}</AvatarFallback>
+              <AvatarFallback>
+                {selectedChild ? getInitials(selectedChild.name) : "?"}
+              </AvatarFallback>
             </Avatar>
             <div>
               <p className="text-sm font-medium">{selectedChild?.name}</p>
@@ -75,8 +84,7 @@ export function ChildSwitcher({
           <SelectItem key={child.id} value={child.id}>
             <div className="flex items-center gap-4">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={child.imageUrl} />
-                <AvatarFallback>{child.name[0]}</AvatarFallback>
+                <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="text-sm font-medium">{child.name}</p>
