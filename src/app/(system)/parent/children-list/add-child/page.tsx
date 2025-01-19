@@ -169,8 +169,7 @@ export default function AddChildPage() {
       }
     };
     fetchParentId();
-  }),
-    [form, router];
+  }, []);
 
   //Don't render form until parent ID is loaded
   if (isLoadingParent) {
