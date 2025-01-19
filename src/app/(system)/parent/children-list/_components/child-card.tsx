@@ -1,13 +1,5 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
-import { MoreVertical } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
@@ -29,29 +21,26 @@ export const ChildCard = ({
   isPresent,
   imageUrl,
 }: ChildCardProps) => {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const router = useRouter();
-  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    const checkImageAccess = async () => {
+    const fetchImage = async () => {
       try {
         const response = await fetch(imageUrl);
-        // If response is not an image (e.g. XML error), set error state
-        if (
-          !response.ok ||
-          !response.headers.get("content-type")?.includes("image")
-        ) {
-          setImageError(true);
-        } else {
-          setImageError(false);
-        }
-      } catch (error) {
-        console.error("Error checking image access:", error);
-        setImageError(true);
+        if (!response.ok) throw new Error("Failed to fetch image");
+
+        const data = await response.json();
+        // Use the front-facing image as the profile picture
+        setPhotoUrl(data.data.front);
+      } catch (err) {
+        console.error("Error fetching image:", err);
+        setError(true);
       }
     };
 
-    checkImageAccess();
+    fetchImage();
   }, [imageUrl]);
 
   const handleClick = () => {
@@ -72,14 +61,13 @@ export const ChildCard = ({
     >
       <CardContent className="p-0">
         <div className="aspect-square relative">
-          {!imageError ? (
+          {photoUrl && !error ? (
             <Image
-              src={imageUrl}
+              src={photoUrl}
               alt={name}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              onError={() => setImageError(true)}
+              onError={() => setError(true)}
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center">

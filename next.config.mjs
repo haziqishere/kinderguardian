@@ -17,7 +17,19 @@ const nextConfig = {
     }
     return config;
   },
-  // Add API routes configuration
+  
+  // Image configuration at the root level
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+        pathname: '/**',
+      }
+    ],
+  },
+
+  // API routes configuration
   async headers() {
     return [
       {

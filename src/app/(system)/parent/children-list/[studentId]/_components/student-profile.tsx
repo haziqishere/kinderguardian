@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,6 +38,14 @@ interface Student {
 
 interface StudentProfileProps {
   student: Student;
+}
+
+interface ImageUrls {
+  front: string | null;
+  left: string | null;
+  right: string | null;
+  tiltUp: string | null;
+  tiltDown: string | null;
 }
 
 const calculateAttendanceRate = (attendance: Student["attendance"]) => {
@@ -77,11 +86,71 @@ const getStatusColor = (status: string) => {
 };
 
 export function StudentProfile({ student }: StudentProfileProps) {
+  const [imageUrls, setImageUrls] = useState<ImageUrls | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
   const initials = student.fullName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase();
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await fetch(`/api/images/${student.id}`);
+        if (!response.ok) throw new Error("Failed to fetch images");
+
+        const data = await response.json();
+        setImageUrls(data.data);
+      } catch (error) {
+        console.error("Error fetching images:", error);
+      }
+    };
+
+    fetchImages();
+  }, [student.id]);
+
+  const handleImageError = (imageType: string) => {
+    setImageErrors((prev) => ({
+      ...prev,
+      [imageType]: true,
+    }));
+  };
+
+  const PhotoCard = ({
+    url,
+    label,
+    type,
+  }: {
+    url: string | null;
+    label: string;
+    type: string;
+  }) => (
+    <div className="relative aspect-square">
+      <Card className="w-full h-full">
+        <CardContent className="p-2 flex items-center justify-center h-full">
+          {url && !imageErrors[type] ? (
+            <div className="relative w-full h-full">
+              <Image
+                src={url}
+                alt={label}
+                fill
+                className="object-cover rounded-md"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                onError={() => handleImageError(type)}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground">
+              <Camera className="h-8 w-8 mb-2" />
+              <span className="text-sm">{label}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   return (
     <>
@@ -213,36 +282,31 @@ export function StudentProfile({ student }: StudentProfileProps) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { url: student.faceImageFront, label: "Front View" },
-                  { url: student.faceImageLeft, label: "Left View" },
-                  { url: student.faceImageRight, label: "Right View" },
-                  { url: student.faceImageTiltUp, label: "Tilt Up" },
-                  { url: student.faceImageTiltDown, label: "Tilt Down" },
-                ].map((image, index) => (
-                  <div key={index} className="relative aspect-square">
-                    <Card className="w-full h-full">
-                      <CardContent className="p-2 flex items-center justify-center h-full">
-                        {image.url ? (
-                          <div className="relative w-full h-full">
-                            <Image
-                              src={image.url}
-                              alt={image.label}
-                              fill
-                              className="object-cover rounded-md"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground">
-                            <Camera className="h-8 w-8 mb-2" />
-                            <span className="text-sm">{image.label}</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
+                <PhotoCard
+                  url={imageUrls?.front || null}
+                  label="Front View"
+                  type="front"
+                />
+                <PhotoCard
+                  url={imageUrls?.left || null}
+                  label="Left View"
+                  type="left"
+                />
+                <PhotoCard
+                  url={imageUrls?.right || null}
+                  label="Right View"
+                  type="right"
+                />
+                <PhotoCard
+                  url={imageUrls?.tiltUp || null}
+                  label="Tilt Up"
+                  type="tiltUp"
+                />
+                <PhotoCard
+                  url={imageUrls?.tiltDown || null}
+                  label="Tilt Down"
+                  type="tiltDown"
+                />
               </div>
             </CardContent>
           </Card>
