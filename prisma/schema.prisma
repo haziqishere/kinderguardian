@@ -25,6 +25,7 @@ enum AlertType {
   WARNING
   ERROR
   SUCCESS
+  EMAIL
 }
 
 enum ParentAction {
@@ -188,7 +189,10 @@ model AlertLog {
   alertType            AlertType
   parentAction         ParentAction
   reason               String?
-  phoneNumberContacted String
+  phoneNumberContacted String?
+  notificationId       String?
+  emailSent            Boolean?
+  emailAddress         String?
   student              Student      @relation(fields: [studentId], references: [id])
   studentId            String
   createdAt            DateTime     @default(now())
@@ -197,6 +201,7 @@ model AlertLog {
   @@index([alertTime])
   @@index([studentId])
   @@index([alertType])
+  @@index([notificationId])
 }
 
 model Admin {

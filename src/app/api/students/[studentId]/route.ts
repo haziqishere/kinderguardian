@@ -1,4 +1,4 @@
-// app/api/students/[studentId]/route.ts
+// src/app/api/students/[studentId]/route.ts
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -15,14 +15,26 @@ export async function GET(
         class: true,
         attendance: {
           orderBy: {
-            date: 'desc',
+            date: 'desc'
           },
-          take: 30, // Last 30 days
+          take: 10,
         },
         alertLogs: {
           orderBy: {
-            alertTime: 'desc',
+            alertTime: 'desc'
           },
+          take: 5,
+          select: {
+            id: true,
+            alertTime: true,
+            alertType: true,
+            parentAction: true,
+            reason: true,
+            phoneNumberContacted: true,
+            studentId: true,
+            createdAt: true,
+            updatedAt: true
+          }
         },
       },
     });
@@ -34,28 +46,11 @@ export async function GET(
       );
     }
 
-    // Calculate attendance stats
-    const totalDays = student.attendance.length;
-    const presentDays = student.attendance.filter(
-      (a) => a.status === "ON_TIME" || a.status === "LATE"
-    ).length;
-    const daysAbsent = student.attendance.filter(
-      (a) => a.status === "ABSENT"
-    ).length;
-
-    const formattedStudent = {
-      ...student,
-      daysAbsent,
-      attendanceRate: totalDays > 0
-        ? ((presentDays / totalDays) * 100).toFixed(1)
-        : "N/A",
-    };
-
-    return NextResponse.json({ data: formattedStudent });
+    return NextResponse.json({ data: student });
   } catch (error) {
-    console.error("[STUDENT_GET]", error);
+    console.error('[GET_STUDENT]', error);
     return NextResponse.json(
-      { error: "Failed to fetch student" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
