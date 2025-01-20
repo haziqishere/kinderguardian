@@ -26,6 +26,7 @@ import { StudentSchemaType } from "@/actions/student/schema";
 import { useKindergartenClasses } from "@/hooks/useKindergartenClasses";
 import { useClassAvailability } from "@/hooks/useClassAvailability";
 import { ClassSelection } from "./class-selection";
+import { KindergartenCodeDialog } from "./kindergarten-code-dialog";
 
 interface BasicInfoFormProps {
   form: UseFormReturn<StudentSchemaType>;
@@ -36,6 +37,12 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
   const { data: kindergartens, isLoading } = useKindergartenClasses();
   const selectedClassId = form.watch("classId");
   const { data: availabilityData } = useClassAvailability(selectedClassId);
+
+  const [showCodeDialog, setShowCodeDialog] = useState(false);
+  const [selectedKindergartenData, setSelectedKindergartenData] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   console.log("Selected Kindergarten:", selectedKindergarten);
   console.log("Form ClassId Value:", form.watch("classId"));
@@ -164,9 +171,14 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
         <Select
           value={selectedKindergarten}
           onValueChange={(value) => {
-            setSelectedKindergarten(value);
-            form.setValue("classId", "");
-            form.setValue("kindergartenId", value);
+            const kindergarten = kindergartens?.find((k) => k.id === value);
+            if (kindergarten) {
+              setSelectedKindergartenData({
+                id: kindergarten.id,
+                name: kindergarten.name,
+              });
+              setShowCodeDialog(true);
+            }
           }}
           disabled={isLoading}
         >
@@ -232,6 +244,21 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
                 <FormDescription className="text-destructive">
                   No classes available for this kindergarten
                 </FormDescription>
+              )}
+              {selectedKindergartenData && (
+                <KindergartenCodeDialog
+                  isOpen={showCodeDialog}
+                  onClose={() => {
+                    setShowCodeDialog(false);
+                    setSelectedKindergartenData(null);
+                  }}
+                  onSuccess={(id) => {
+                    setSelectedKindergarten(id);
+                    form.setValue("classId", "");
+                    form.setValue("kindergartenId", id);
+                  }}
+                  kindergartenData={selectedKindergartenData}
+                />
               )}
             </FormItem>
           );

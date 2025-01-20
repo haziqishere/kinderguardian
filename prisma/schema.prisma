@@ -21,6 +21,7 @@ model Kindergarten {
   classes               Class[]
   events                Event[]
   operatingHours        OperatingHours[]
+  holidays              Holiday[]
 
   @@index([name])
 }
@@ -217,6 +218,23 @@ model ClassEvent {
   @@id([classId, eventId])
   @@index([classId])
   @@index([eventId])
+}
+
+model Holiday {
+  id             String       @id @default(uuid())
+  name           String
+  startDate      DateTime     @db.Date
+  endDate        DateTime     @db.Date
+  description    String?
+  kindergartenId String
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
+  isRecurring    Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([kindergartenId])
+  @@index([startDate])
+  @@index([endDate])
 }
 
 enum AttendanceStatus {

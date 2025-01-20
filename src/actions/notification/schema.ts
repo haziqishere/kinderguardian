@@ -55,6 +55,8 @@ This is to inform you that {{studentName}} arrived at {{time}} today, which is a
 
 Please ensure timely arrival to maintain consistent learning routines.
 
+Access to Portal: https://kinderguardian.tech
+
 Best regards,
 KinderGuardian Team`
   }

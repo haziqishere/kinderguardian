@@ -1,99 +1,72 @@
+// src/app/api/parent/alerts/[alertId]/route.ts
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { jwtDecode } from "jwt-decode";
-
-interface FirebaseJwtPayload {
-  user_id: string;
-}
+import { AttendanceStatus, ParentAction } from "@prisma/client";
 
 export async function PATCH(
   req: Request,
   { params }: { params: { alertId: string } }
 ) {
   try {
-    // Get the session token from cookies
-    const sessionCookie = cookies().get("session")?.value;
+    const { status, reason } = await req.json();
+    const alertId = params.alertId;
 
-    if (!sessionCookie) {
+    // Only status is required
+    if (!status) {
       return NextResponse.json(
-        { error: "Unauthorized - No session cookie" },
-        { status: 401 }
+        { error: "Status is required" },
+        { status: 400 }
       );
     }
 
-    // Decode the JWT to get Firebase UID
-    const decoded = jwtDecode(sessionCookie) as FirebaseJwtPayload;
-    
-    // Get parent using Firebase UID
-    const parent = await db.parent.findUnique({
-      where: {
-        firebaseId: decoded.user_id
-      }
+    // Get the alert log first
+    const alertLog = await db.alertLog.findUnique({
+      where: { id: alertId },
+      include: { student: true }
     });
 
-    if (!parent) {
-      return NextResponse.json(
-        { error: "Parent not found" },
-        { status: 404 }
-      );
-    }
-
-    // Get the request body
-    const body = await req.json();
-    const { status, reason } = body;
-
-    // Verify the alert belongs to one of the parent's children
-    const alert = await db.alertLog.findFirst({
-      where: {
-        id: params.alertId,
-        student: {
-          parentId: parent.id,
-        },
-      },
-      include: {
-        student: true,
-      },
-    });
-
-    if (!alert) {
+    if (!alertLog) {
       return NextResponse.json(
         { error: "Alert not found" },
         { status: 404 }
       );
     }
 
-    // Update the alert
-    const updatedAlert = await db.alertLog.update({
-      where: {
-        id: params.alertId,
-      },
-      data: {
-        parentAction: 'RESPONDED',
-        reason,
-      },
-    });
-
-    // Also update the student's attendance for this day
-    await db.attendance.updateMany({
-      where: {
-        studentId: alert.student.id,
-        date: alert.alertTime,
-      },
-      data: {
-        status,
-      },
-    });
+    // Transaction to update both alert and create attendance
+    const [updatedAlert, attendance] = await db.$transaction([
+      // Update alert log - reason is optional
+      db.alertLog.update({
+        where: { id: alertId },
+        data: {
+          parentAction: ParentAction.RESPONDED,
+          reason: reason || null  // Allow null if no reason provided
+        }
+      }),
+      
+      // Create attendance record
+      db.attendance.create({
+        data: {
+          studentId: alertLog.studentId,
+          date: new Date(),
+          status: status as AttendanceStatus,
+          timeRecorded: new Date()
+        }
+      })
+    ]);
 
     return NextResponse.json({
       success: true,
-      data: updatedAlert,
+      data: {
+        alert: updatedAlert,
+        attendance: attendance
+      }
     });
+
   } catch (error) {
-    console.error("[ALERT_UPDATE]", error);
+    console.error("[ALERT_RESPONSE_ERROR]", error);
     return NextResponse.json(
-      { error: "Failed to update alert" },
+      { error: "Failed to process alert response" },
       { status: 500 }
     );
   }
-} 
+}
