@@ -2,9 +2,12 @@
 import { NextResponse } from "next/server";
 import { NotificationService } from "@/actions/notification";
 
-export async function GET(req: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Record<string, string> }
+) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
 
     if (!studentId) {
@@ -16,7 +19,6 @@ export async function GET(req: Request) {
 
     console.log("Starting email test with studentId:", studentId);
 
-    // First verify the student exists
     const result = await NotificationService.sendAttendanceAlert(studentId);
 
     console.log("Notification result:", result);
