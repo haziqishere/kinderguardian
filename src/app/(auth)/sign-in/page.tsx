@@ -16,10 +16,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { sendResetPasswordEmail } from "@/lib/firebase";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function SignInPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(LoginSchema),
@@ -28,6 +38,25 @@ export default function SignInPage() {
       password: "",
     },
   });
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      await sendResetPasswordEmail(resetEmail);
+      toast.success("Password reset email sent! Check your inbox");
+      setShowResetDialog(false);
+      setResetEmail("");
+    } catch (error) {
+      toast.error("Failed to send reset email");
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const onSubmit = async (data: LoginSchemaType) => {
     try {
@@ -83,18 +112,61 @@ export default function SignInPage() {
               Sign In
             </Button>
 
-            <div className="text-center">
+            <div className="flex flex-col items-center gap-3 justify-between text-sm">
               <Button
                 variant="link"
-                className="p-0 h-auto font-semibold"
+                className="p-0 h-auto"
                 onClick={() => router.push("/sign-up")}
               >
                 Don&apos;t have an account? Sign up
+              </Button>
+              <Button
+                variant="link"
+                className="p-0 h-auto"
+                onClick={() => setShowResetDialog(true)}
+              >
+                Forgot password?
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter your email address and we'll send you a link to reset your
+              password.
+            </p>
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowResetDialog(false);
+                  setResetEmail("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleResetPassword}
+                disabled={isResetting || !resetEmail}
+              >
+                {isResetting ? "Sending..." : "Send Reset Link"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

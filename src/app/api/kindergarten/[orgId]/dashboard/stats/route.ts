@@ -11,7 +11,12 @@ export async function GET(
     const [students, classes, todayAttendance] = await Promise.all([
       db.student.findMany({
         where: {
-          class: { kindergartenId: params.orgId }
+          class: { 
+            kindergartenId: params.orgId,
+          },
+          classId: {
+            not: null
+          }
         }
       }),
       db.class.findMany({

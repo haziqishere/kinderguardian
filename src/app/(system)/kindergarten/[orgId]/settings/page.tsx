@@ -32,6 +32,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, Clock, Bell, Save, Loader2 } from "lucide-react";
+import { InvitationCodes } from "@/components/invitation-codes";
 
 interface SettingsPageProps {
   params: {
@@ -59,7 +60,7 @@ const dayNames: Record<DayOfWeek, string> = {
 
 export default function SettingsPage({ params }: SettingsPageProps) {
   const [loading, setLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true); // Add this
+  const [isInitializing, setIsInitializing] = useState(true);
   const [activeTab, setActiveTab] = useState("general");
 
   const form = useForm<KindergartenSettingsSchemaType>({
@@ -217,11 +218,14 @@ export default function SettingsPage({ params }: SettingsPageProps) {
           <form className="space-y-6">
             <TabsContent value="general">
               <Card>
-                <CardHeader>
-                  <CardTitle>General Information</CardTitle>
-                  <CardDescription>
-                    Basic details about your kindergarten
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle>General Information</CardTitle>
+                    <CardDescription>
+                      Basic details about your kindergarten
+                    </CardDescription>
+                  </div>
+                  <InvitationCodes kindergartenId={params.orgId} />
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -265,11 +269,13 @@ export default function SettingsPage({ params }: SettingsPageProps) {
 
             <TabsContent value="operating-hours">
               <Card>
-                <CardHeader>
-                  <CardTitle>Operating Hours</CardTitle>
-                  <CardDescription>
-                    Set your kindergarten's operating hours for each day
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle>Operating Hours</CardTitle>
+                    <CardDescription>
+                      Set your kindergarten's operating hours for each day
+                    </CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">

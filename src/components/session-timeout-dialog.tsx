@@ -38,7 +38,7 @@ export function SessionTimeoutDialog() {
   }, []);
 
   const handleLogin = () => {
-    router.push("/login");
+    router.push("/sign-in");
     setIsOpen(false);
   };
 

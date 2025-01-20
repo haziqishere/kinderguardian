@@ -18,7 +18,12 @@ export async function GET(
         OR: [
           {
             targetAudience: {
-              hasSome: [UserType.ALL, UserType.ADMIN]
+              has: UserType.ALL
+            }
+          },
+          {
+            targetAudience: {
+              has: UserType.ADMIN
             }
           },
           {
