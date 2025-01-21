@@ -36,7 +36,7 @@ const NavBar = () => {
               </a>
             ))}
             <Button size="lg" className="gradient-animation" asChild>
-              <Link href="/sign-in">Get Started</Link>
+              <Link href="/sign-in">Login</Link>
             </Button>
           </div>
 

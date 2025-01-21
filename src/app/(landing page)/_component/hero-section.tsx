@@ -31,8 +31,8 @@ const features = [
 const HeroSection = () => {
   return (
     <section className="relative min-h-[200vh] bg-white">
-      <div className="absolute inset-0 [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]">
-        <Meteors number={200} />
+      <div className="absolute inset-0  sm:left-[-50%] [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]">
+        <Meteors number={20} />
       </div>
 
       <div className="container relative mt-12 mx-auto px-4 pt-32">
@@ -63,12 +63,12 @@ const HeroSection = () => {
                   }}
                 />
                 <span className="relative">
+                  <span className=" text-3xl md:text-4xl lg:text-7xl block md:inline">
+                    Next Generation Kindergarten
+                  </span>{" "}
                   <AuroraText className="text-3xl md:text-4xl lg:text-7xl">
-                    Kindergarten
-                  </AuroraText>{" "}
-                  <span className="text-[#3067DE] text-3xl md:text-4xl lg:text-7xl block md:inline">
                     Management
-                  </span>
+                  </AuroraText>
                 </span>
               </span>
             </h1>
