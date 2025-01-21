@@ -10,9 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Student } from "@/types/student";
 
 interface AttendanceTableProps {
-  attendance: any[]; // Type this properly
+  attendance: Student["attendance"];
 }
 
 export function AttendanceTable({ attendance }: AttendanceTableProps) {
@@ -28,7 +29,7 @@ export function AttendanceTable({ attendance }: AttendanceTableProps) {
       <TableBody>
         {attendance.map((record) => (
           <TableRow key={record.id}>
-            <TableCell>{format(record.date, "PPP")}</TableCell>
+            <TableCell>{format(new Date(record.date), "PPP")}</TableCell>
             <TableCell>
               <Badge
                 variant={
@@ -36,13 +37,13 @@ export function AttendanceTable({ attendance }: AttendanceTableProps) {
                     ? "positive"
                     : record.status === "LATE"
                     ? "warning"
-                    : "negative"
+                    : "destructive"
                 }
               >
-                {record.status}
+                {record.status.replace("_", " ")}
               </Badge>
             </TableCell>
-            <TableCell>{format(record.timeRecorded, "p")}</TableCell>
+            <TableCell>{format(new Date(record.timeRecorded), "p")}</TableCell>
           </TableRow>
         ))}
       </TableBody>

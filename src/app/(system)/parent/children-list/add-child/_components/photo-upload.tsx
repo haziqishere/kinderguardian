@@ -46,9 +46,42 @@ const getPositionInstructions = (type: string) => {
   }
 };
 
-interface WebcamProps {
-  getScreenshot: () => string | null;
-}
+const Arrow = ({
+  direction,
+}: {
+  direction: "left" | "right" | "up" | "down";
+}) => {
+  const getTransform = () => {
+    switch (direction) {
+      case "left":
+        return "translate(24, 12) rotate(180)";
+      case "right":
+        return "translate(0, 12) rotate(0)";
+      case "up":
+        return "translate(12, 24) rotate(-90)";
+      case "down":
+        return "translate(12, 0) rotate(90)";
+    }
+  };
+
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <g transform={getTransform()}>
+        <line x1="0" y1="0" x2="14" y2="0" />
+        <polyline points="7,-7 14,0 7,7" />
+      </g>
+    </svg>
+  );
+};
 
 export const PhotoUpload = ({
   type,
@@ -211,17 +244,42 @@ export const PhotoUpload = ({
             <div className="absolute inset-0 pointer-events-none">
               <div className="w-full h-full border-2 border-dashed border-white/50">
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  {type === "front" && (
-                    <div className="w-48 h-48 border-2 border-white/50 rounded-full" />
+                  {/* Consistent circle guide for all angles */}
+                  <div className="w-48 h-48 border-2 border-white/50 rounded-full" />
+
+                  {/* Directional Arrows */}
+                  {type === "left" && (
+                    <div className="absolute -left-16 top-1/2 transform -translate-y-1/2">
+                      <Arrow direction="left" />
+                    </div>
                   )}
-                  {(type === "left" || type === "right") && (
-                    <div className="w-48 h-48 border-2 border-white/50 rounded-lg transform skew-x-12" />
+                  {type === "right" && (
+                    <div className="absolute -right-16 top-1/2 transform -translate-y-1/2">
+                      <Arrow direction="right" />
+                    </div>
                   )}
-                  {(type === "tiltUp" || type === "tiltDown") && (
-                    <div className="w-48 h-48 border-2 border-white/50 rounded-lg transform -skew-y-12" />
+                  {type === "tiltUp" && (
+                    <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
+                      <Arrow direction="up" />
+                    </div>
                   )}
+                  {type === "tiltDown" && (
+                    <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
+                      <Arrow direction="down" />
+                    </div>
+                  )}
+
+                  {/* Text Direction Guide */}
+                  <div className="absolute -bottom-24 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                    {type === "left" && "Look Left"}
+                    {type === "right" && "Look Right"}
+                    {type === "tiltUp" && "Tilt Up"}
+                    {type === "tiltDown" && "Tilt Down"}
+                  </div>
                 </div>
               </div>
+
+              {/* Instructions Banner */}
               <div className="absolute top-4 left-4 right-4 text-white text-sm text-center bg-black/50 p-2 rounded">
                 {getPositionInstructions(type)}
               </div>

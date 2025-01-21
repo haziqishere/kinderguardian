@@ -10,9 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Student } from "@/types/student";
 
 interface AlertLogTableProps {
-  alertLogs: any[]; // Type this properly
+  alertLogs: Student["alertLogs"];
 }
 
 export function AlertLogTable({ alertLogs }: AlertLogTableProps) {
@@ -29,10 +30,10 @@ export function AlertLogTable({ alertLogs }: AlertLogTableProps) {
       <TableBody>
         {alertLogs.map((log) => (
           <TableRow key={log.id}>
-            <TableCell>{format(log.alertTime, "PPP")}</TableCell>
+            <TableCell>{format(new Date(log.alertTime), "PPP")}</TableCell>
             <TableCell>
               <Badge
-                variant={log.alertType === "CALLED" ? "negative" : "warning"}
+                variant={log.alertType === "CALLED" ? "destructive" : "warning"}
               >
                 {log.alertType}
               </Badge>
@@ -40,7 +41,7 @@ export function AlertLogTable({ alertLogs }: AlertLogTableProps) {
             <TableCell>
               <Badge
                 variant={
-                  log.parentAction === "RESPONDED" ? "positive" : "negative"
+                  log.parentAction === "RESPONDED" ? "positive" : "destructive"
                 }
               >
                 {log.parentAction}

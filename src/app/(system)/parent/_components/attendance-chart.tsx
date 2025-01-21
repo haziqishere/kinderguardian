@@ -20,17 +20,20 @@ interface AttendanceChartProps {
 
 export const AttendanceChart = ({ data }: AttendanceChartProps) => {
   return (
-    <Card className="mb-8">
-      <CardHeader>
+    <Card className="mb-4 md:mb-8">
+      <CardHeader className="p-4 md:p-6">
         <CardTitle>Attendance Overview</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-64">
+      <CardContent className="p-4 md:p-6">
+        <div className="h-48 md:h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
+            <LineChart
+              data={data}
+              margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
               <Line
                 type="monotone"

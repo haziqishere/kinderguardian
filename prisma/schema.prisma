@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,7 +7,236 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums
+model Kindergarten {
+  id                    String           @id @default(uuid())
+  name                  String           @unique
+  address               String
+  messageAlertThreshold DateTime         @db.Time(6)
+  callAlertThreshold    DateTime         @db.Time(6)
+  totalOperatingDays    Int              @default(0)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  admins                Admin[]
+  alerts                Alert[]
+  classes               Class[]
+  events                Event[]
+  operatingHours        OperatingHours[]
+  holidays              Holiday[]
+
+  @@index([name])
+}
+
+model OperatingHours {
+  id             String       @id @default(uuid())
+  dayOfWeek      DayOfWeek
+  startTime      DateTime     @db.Time(6)
+  endTime        DateTime     @db.Time(6)
+  kindergartenId String
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
+
+  @@unique([kindergartenId, dayOfWeek])
+  @@index([kindergartenId])
+}
+
+model Class {
+  id             String       @id @default(uuid())
+  name           String
+  capacity       Int
+  kindergartenId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
+  events         ClassEvent[]
+  students       Student[]
+
+  @@unique([kindergartenId, name])
+  @@index([kindergartenId])
+}
+
+model Student {
+  id                String              @id @default(uuid())
+  fullName          String
+  age               Int
+  daysAbsent        Int                 @default(0)
+  faceImageFront    String?
+  faceImageLeft     String?
+  faceImageRight    String?
+  faceImageTiltUp   String?
+  faceImageTiltDown String?
+  classId           String?
+  parentId          String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  alertLogs         AlertLog[]
+  attendance        Attendance[]
+  phoneNumbers      ParentPhoneNumber[]
+  class             Class?              @relation(fields: [classId], references: [id])
+  parent            Parent              @relation(fields: [parentId], references: [id])
+
+  @@index([classId])
+  @@index([parentId])
+  @@index([fullName])
+}
+
+model Parent {
+  id         String    @id @default(uuid())
+  firebaseId String    @unique
+  email      String    @unique
+  name       String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  students   Student[]
+
+  @@index([firebaseId])
+}
+
+model ParentPhoneNumber {
+  id          String   @id @default(uuid())
+  phoneNumber String
+  studentId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  student     Student  @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([phoneNumber])
+}
+
+model Attendance {
+  id           String           @id @default(uuid())
+  date         DateTime         @db.Date
+  status       AttendanceStatus
+  timeRecorded DateTime
+  studentId    String
+  updatedAt    DateTime         @updatedAt
+  student      Student          @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, date])
+  @@index([date])
+  @@index([studentId])
+  @@index([status])
+}
+
+model AlertLog {
+  id                   String       @id @default(uuid())
+  alertTime            DateTime
+  alertType            AlertType
+  parentAction         ParentAction
+  reason               String?
+  phoneNumberContacted String?
+  notificationId       String?
+  emailSent            Boolean?
+  emailAddress         String?
+  studentId            String
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  messageId            String?
+  messageStatus        String?
+  student              Student      @relation(fields: [studentId], references: [id])
+
+  @@index([alertTime])
+  @@index([studentId])
+  @@index([alertType])
+  @@index([notificationId])
+}
+
+model Admin {
+  id             String        @id @default(uuid())
+  firebaseId     String        @unique
+  email          String        @unique
+  name           String
+  role           AdminRole     @default(ADMIN)
+  kindergartenId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  kindergarten   Kindergarten? @relation(fields: [kindergartenId], references: [id])
+
+  @@index([kindergartenId])
+  @@index([firebaseId])
+}
+
+model Alert {
+  id             String       @id @default(uuid())
+  title          String
+  message        String
+  type           AlertType
+  kindergartenId String
+  targetUserType UserType
+  isRead         Boolean      @default(false)
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id], onDelete: Cascade)
+
+  @@index([kindergartenId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([targetUserType])
+}
+
+model Event {
+  id             String       @id @default(uuid())
+  title          String
+  description    String
+  startDate      DateTime
+  endDate        DateTime
+  location       String
+  type           EventType
+  kindergartenId String
+  targetAudience UserType[]
+  isAllDay       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  attendees      Attendee[]
+  classes        ClassEvent[]
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id], onDelete: Cascade)
+
+  @@index([kindergartenId])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model Attendee {
+  id        String         @id @default(uuid())
+  name      String
+  type      UserType
+  status    AttendeeStatus
+  eventId   String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model ClassEvent {
+  classId String
+  eventId String
+  class   Class  @relation(fields: [classId], references: [id])
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  @@id([classId, eventId])
+  @@index([classId])
+  @@index([eventId])
+}
+
+model Holiday {
+  id             String       @id @default(uuid())
+  name           String
+  startDate      DateTime     @db.Date
+  endDate        DateTime     @db.Date
+  description    String?
+  kindergartenId String
+  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
+  isRecurring    Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([kindergartenId])
+  @@index([startDate])
+  @@index([endDate])
+}
+
 enum AttendanceStatus {
   PENDING
   ON_TIME
@@ -24,6 +247,11 @@ enum AttendanceStatus {
 enum AlertType {
   MESSAGED
   CALLED
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  EMAIL
 }
 
 enum ParentAction {
@@ -47,168 +275,23 @@ enum AdminRole {
   TEACHER
 }
 
-// Main entity models
-model Kindergarten {
-  id                    String           @id @default(uuid())
-  name                  String
-  address               String
-  messageAlertThreshold DateTime         @db.Time() // Time of day for first alert
-  callAlertThreshold    DateTime         @db.Time() // Time of day for call alert
-  totalOperatingDays    Int              @default(0)
-  operatingHours        OperatingHours[]
-  classes               Class[]
-  admins                Admin[]
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-
-  @@index([name])
+enum EventType {
+  ACTIVITY
+  HOLIDAY
+  MEETING
+  OTHER
 }
 
-model OperatingHours {
-  id             String       @id @default(uuid())
-  dayOfWeek      DayOfWeek
-  startTime      DateTime     @db.Time()
-  endTime        DateTime     @db.Time()
-  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
-  kindergartenId String
-
-  @@unique([kindergartenId, dayOfWeek])
-  @@index([kindergartenId])
+enum UserType {
+  ALL
+  PARENT
+  TEACHER
+  ADMIN
+  STUDENT
 }
 
-model Class {
-  id             String       @id @default(uuid())
-  name           String
-  capacity       Int
-  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
-  kindergartenId String
-  students       Student[]
-  events         ClassEvent[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@unique([kindergartenId, name])
-  @@index([kindergartenId])
-}
-
-model Student {
-  id                String              @id @default(uuid())
-  fullName          String
-  age               Int // @assert.range(0, 12) - Validate in API
-  daysAbsent        Int                 @default(0)
-  faceImageFront    String? // S3 filename
-  faceImageLeft     String?
-  faceImageRight    String?
-  faceImageTiltUp   String?
-  faceImageTiltDown String?
-  class             Class?              @relation(fields: [classId], references: [id])
-  classId           String?
-  parent            Parent              @relation(fields: [parentId], references: [id])
-  parentId          String
-  attendance        Attendance[]
-  alertLogs         AlertLog[]
-  phoneNumbers      ParentPhoneNumber[]
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-
-  @@index([classId])
-  @@index([parentId])
-  @@index([fullName])
-}
-
-model Parent {
-  id        String    @id @default(uuid())
-  clerkId   String    @unique
-  students  Student[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@index([clerkId])
-}
-
-model ParentPhoneNumber {
-  id          String   @id @default(uuid())
-  phoneNumber String   @unique
-  student     Student  @relation(fields: [studentId], references: [id])
-  studentId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Validate Malaysian phone number format in API layer
-  // Pattern: ^01\d{8,9}$
-
-  @@index([studentId])
-}
-
-model Attendance {
-  id           String           @id @default(uuid())
-  date         DateTime         @db.Date
-  status       AttendanceStatus
-  timeRecorded DateTime // When attendance was recorded
-  student      Student          @relation(fields: [studentId], references: [id])
-  studentId    String
-  updatedAt    DateTime         @updatedAt // Track any status changes
-
-  @@unique([studentId, date])
-  @@index([date])
-  @@index([studentId])
-  @@index([status])
-}
-
-model AlertLog {
-  id                   String       @id @default(uuid())
-  alertTime            DateTime
-  alertType            AlertType
-  parentAction         ParentAction
-  reason               String?
-  phoneNumberContacted String
-  student              Student      @relation(fields: [studentId], references: [id])
-  studentId            String
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-
-  @@index([alertTime])
-  @@index([studentId])
-  @@index([alertType])
-}
-
-model Event {
-  id                   String       @id @default(uuid())
-  title                String
-  dateTime             DateTime
-  description          String
-  location             String
-  cost                 Decimal      @db.Decimal(10, 2)
-  requiredItems        String?      @db.Text
-  teacherInChargeName  String?
-  teacherInChargePhone String?
-  classes              ClassEvent[]
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-
-  @@index([dateTime])
-}
-
-model ClassEvent {
-  class   Class  @relation(fields: [classId], references: [id])
-  classId String
-  event   Event  @relation(fields: [eventId], references: [id])
-  eventId String
-
-  @@id([classId, eventId])
-  @@index([classId])
-  @@index([eventId])
-}
-
-model Admin {
-  id             String       @id @default(uuid())
-  clerkId        String       @unique
-  role           AdminRole
-  kindergarten   Kindergarten @relation(fields: [kindergartenId], references: [id])
-  kindergartenId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([kindergartenId])
-  @@index([clerkId])
+enum AttendeeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }

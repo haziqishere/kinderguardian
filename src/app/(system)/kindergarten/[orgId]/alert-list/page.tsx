@@ -1,47 +1,49 @@
+// app/kindergarten/[orgId]/alert-list/page.tsx
+"use client";
+
 import { AlertList } from "../_components/alert-list";
+import { useAlerts } from "@/hooks/useAlerts";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
-export default async function AlertListPage() {
-  const respondedData = [
-    {
-      id: "1",
-      name: "Haris Azhari bin Zaharudin",
-      class: "5 Kenyala",
-      attendancePerformance: "99.5%",
-      parentAction: "Responded" as const,
-      alertStatus: "Messaged" as const,
-      reason: "Sick",
-    },
-    {
-      id: "2",
-      name: "Irfan bin Abdul Ghafar",
-      class: "4 Mentari",
-      attendancePerformance: "99.5%",
-      parentAction: "Responded" as const,
-      alertStatus: "Messaged" as const,
-      reason: "Going back to hometown",
-    },
-  ];
+export default function AlertListPage({
+  params,
+}: {
+  params: { orgId: string };
+}) {
+  const { data, isLoading, error } = useAlerts(params.orgId);
 
-  const awaitingData = [
-    {
-      id: "3",
-      name: "Muhammad Hakim bin Zulkhainan",
-      class: "5 Kenari",
-      attendancePerformance: "99.5%",
-      parentAction: "No Response" as const,
-      alertStatus: "Called" as const,
-    },
-    {
-      id: "4",
-      name: "Nandaprian Rajasekaran",
-      class: "5 Kenanga",
-      attendancePerformance: "99.5%",
-      parentAction: "No Response" as const,
-      alertStatus: "Called" as const,
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-10 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+            <p className="text-muted-foreground mt-2">Loading alerts...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-10 text-center text-destructive">
+            Failed to load alerts
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <AlertList respondedData={respondedData} awaitingData={awaitingData} />
+    <div className="p-6">
+      <AlertList
+        respondedData={data?.responded || []}
+        awaitingData={data?.awaiting || []}
+      />
+    </div>
   );
 }

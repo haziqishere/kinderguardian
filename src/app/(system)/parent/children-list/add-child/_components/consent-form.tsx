@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UseFormReturn } from "react-hook-form";
-import { AddChildSchemaType } from "@/actions/student/schema";
+import { StudentSchemaType } from "@/actions/student/schema";
 
 interface ConsentFormProps {
-  form: UseFormReturn<AddChildSchemaType>;
+  form: UseFormReturn<StudentSchemaType>;
 }
 
 export const ConsentForm = ({ form }: ConsentFormProps) => {

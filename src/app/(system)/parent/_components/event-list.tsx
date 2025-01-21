@@ -1,45 +1,99 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 interface EventListProps {
   classId: string;
+  kindergartenId: string;
 }
 
-const EventList = ({ classId }: EventListProps) => {
-  const events = [
-    {
-      title: "Petrosains KLCC Visit",
-      date: "30 March 2024",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  type: string;
+  classes: Array<{
+    classId: string;
+  }>;
+}
+
+const EventList = ({ classId, kindergartenId }: EventListProps) => {
+  const { data: events, isLoading } = useQuery<{ data: Event[] }>({
+    queryKey: ["events", kindergartenId, classId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/kindergarten/${kindergartenId}/events?classIds=${classId}&userType=PARENT`
+      );
+      if (!response.ok) throw new Error("Failed to fetch events");
+      return response.json();
     },
-    {
-      title: "Beryl's Chocolate Factory Visit",
-      date: "8 August 2024",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    },
-  ];
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Events</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!events?.data || events.data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Events</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground py-8">
+            No upcoming events
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Event</CardTitle>
+        <CardTitle>Events</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {events.map((event, index) => (
-            <div
-              key={index}
-              className="space-y-2 rounded-xl p-3 shadow-xs border outline-0"
-            >
-              <h3 className="text-blue-600 font-medium hover:underline cursor-pointer">
-                {event.title}
-              </h3>
-              <p className="text-sm text-gray-500">{event.date}</p>
-              <p className="text-sm text-gray-600">{event.description}</p>
-            </div>
-          ))}
+          {events?.data
+            .sort(
+              (a, b) =>
+                new Date(a.startDate).getTime() -
+                new Date(b.startDate).getTime()
+            )
+            .map((event) => (
+              <div
+                key={event.id}
+                className="space-y-2 rounded-xl p-3 shadow-xs border outline-0"
+              >
+                <h3 className="text-blue-600 font-medium hover:underline cursor-pointer">
+                  {event.title}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {format(new Date(event.startDate), "d MMMM yyyy")}
+                </p>
+                <p className="text-sm text-gray-600">{event.description}</p>
+                <p className="text-sm text-gray-500">
+                  Location: {event.location}
+                </p>
+              </div>
+            ))}
         </div>
       </CardContent>
     </Card>

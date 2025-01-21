@@ -1,88 +1,101 @@
 // parent/_components/child-switcher.tsx
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
+
+import * as React from "react";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChildSwitcherSkeleton } from "./loading-skeleton";
-
-// Define interfaces for the component
-interface ChildClass {
-  id: string;
-  name: string;
-}
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export interface Child {
   id: string;
   name: string;
-  class: ChildClass;
-  imageUrl?: string;
+  class: {
+    id: string;
+    name: string;
+  };
 }
 
 interface ChildSwitcherProps {
   children: Child[];
-  selectedChild: Child;
+  selectedChild: Child | null;
   onChildChange: (childId: string) => void;
   isLoading?: boolean;
 }
 
-export const ChildSwitcher = ({
+export function ChildSwitcher({
   children,
   selectedChild,
   onChildChange,
   isLoading = false,
-}: ChildSwitcherProps) => {
+}: ChildSwitcherProps) {
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
   if (isLoading) {
-    return <ChildSwitcherSkeleton />;
+    return <div>Loading...</div>;
+  }
+
+  if (children.length === 0) {
+    return (
+      <div className="flex items-center gap-4">
+        <Avatar className="h-12 w-12">
+          <AvatarFallback>?</AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="text-sm font-medium">No children</p>
+          <p className="text-sm text-muted-foreground">Add your first child</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Card className="mb-6">
-      <CardContent className="py-3">
-        <div className="flex items-center justify-between">
+    <Select value={selectedChild?.id} onValueChange={onChildChange}>
+      <SelectTrigger className="w-[250px] border-0 bg-transparent p-0 hover:bg-transparent focus:ring-0">
+        <SelectValue>
           <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={selectedChild.imageUrl} />
-              <AvatarFallback>{selectedChild.name[0]}</AvatarFallback>
+            <Avatar className="h-6 w-6 md:h-12 md:w-12">
+              <AvatarFallback>
+                {selectedChild ? getInitials(selectedChild.name) : "?"}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-xl font-semibold">{selectedChild.name}</h2>
+              <p className="text-sm font-medium">{selectedChild?.name}</p>
               <p className="text-sm text-muted-foreground">
-                {selectedChild.class.name}
+                {selectedChild?.class?.name}
               </p>
             </div>
           </div>
-          <Select
-            value={selectedChild.id}
-            onValueChange={onChildChange}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Switch child" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {children.map((child) => (
-                  <SelectItem key={child.id} value={child.id}>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback>{child.name[0]}</AvatarFallback>
-                      </Avatar>
-                      {child.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardContent>
-    </Card>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {children.map((child) => (
+          <SelectItem key={child.id} value={child.id}>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">{child.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {child.class.name}
+                </p>
+              </div>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
-};
+}

@@ -1,12 +1,15 @@
 // src/app/kindergarten/[orgId]/events/_components/event-form-dialog.tsx
 "use client";
+
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { EventSchema, EventSchemaType } from "@/actions/event/schema";
-import { createEvent } from "@/actions/event";
 import { toast } from "sonner";
+import { useCreateEvent } from "@/hooks/useEvents";
+import { UserType } from "@prisma/client";
 
 import {
   Dialog,
@@ -27,25 +30,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MultiSelect } from "./multi-select";
+
 interface EventFormDialogProps {
   classes: { id: string; name: string }[];
 }
 
-const dummyClasses = [
-  { id: "1", name: "5 Kenyala" },
-  { id: "2", name: "5 Kenari" },
-  { id: "3", name: "4 Mentari" },
-  { id: "4", name: "4 Mutiara" },
-];
-
-const classOptions = dummyClasses.map((c) => ({
-  value: c.id,
-  label: c.name,
-}));
-
 export function EventFormDialog({ classes }: EventFormDialogProps) {
+  const { orgId } = useParams();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const createEventMutation = useCreateEvent(orgId as string);
 
   const form = useForm<EventSchemaType>({
     resolver: zodResolver(EventSchema),
@@ -53,33 +47,27 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
       title: "",
       description: "",
       location: "",
-      cost: 0,
-      teacherInChargeName: "",
-      teacherInChargePhone: "",
-      requiredItems: "",
-      classIds: [],
-      dateTime: new Date(),
+      type: "ACTIVITY",
+      targetAudience: ["ALL"],
+      startDate: new Date(),
+      endDate: new Date(),
+      isAllDay: false,
+      kindergartenId: orgId as string,
+      classId: [],
     },
   });
 
   const onSubmit = async (data: EventSchemaType) => {
-    try {
-      setLoading(true);
-      const response = await createEvent(data);
-
-      if (response.error) {
-        toast.error(response.error);
-        return;
-      }
-
-      toast.success("Event created successfully");
-      setOpen(false);
-      form.reset();
-    } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    createEventMutation.mutate(data, {
+      onSuccess: () => {
+        setOpen(false);
+        form.reset();
+        toast.success("Event created successfully");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to create event");
+      },
+    });
   };
 
   return (
@@ -96,7 +84,7 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
             <FormField
               control={form.control}
               name="title"
-              render={({ field }: { field: any }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
@@ -109,21 +97,19 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="dateTime"
+                name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>Start Date</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
-                        {...field}
                         value={
                           field.value ? format(field.value, "yyyy-MM-dd") : ""
                         }
-                        onChange={(e) => {
-                          const date = new Date(e.target.value);
-                          field.onChange(date);
-                        }}
+                        onChange={(e) =>
+                          field.onChange(new Date(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -132,12 +118,20 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
               />
               <FormField
                 control={form.control}
-                name="location"
+                name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>End Date</FormLabel>
                     <FormControl>
-                      <Input placeholder="Event location" {...field} />
+                      <Input
+                        type="date"
+                        value={
+                          field.value ? format(field.value, "yyyy-MM-dd") : ""
+                        }
+                        onChange={(e) =>
+                          field.onChange(new Date(e.target.value))
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -162,81 +156,36 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="teacherInChargeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teacher Name (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Name of teacher in charge"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cost (RM)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        value={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+
             <FormField
               control={form.control}
-              name="teacherInChargePhone"
+              name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teacher Phone (Optional)</FormLabel>
+                  <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contact number" {...field} />
+                    <Input placeholder="Event location" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="requiredItems"
+              name="targetAudience"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Required Items</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Items students need to bring"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="classIds"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Select Classes</FormLabel>
+                  <FormLabel>Target Audience</FormLabel>
                   <FormControl>
                     <MultiSelect
-                      options={classOptions}
-                      selected={field.value || []}
+                      options={[
+                        { value: UserType.ALL, label: "All" },
+                        { value: UserType.PARENT, label: "Parents" },
+                        { value: UserType.TEACHER, label: "Teachers" },
+                        { value: UserType.STUDENT, label: "Students" },
+                      ]}
+                      selected={field.value}
                       onChange={field.onChange}
                     />
                   </FormControl>
@@ -244,16 +193,39 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="classId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select Classes</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={classes.map((c) => ({
+                        value: c.id,
+                        label: c.name,
+                      }))}
+                      selected={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end space-x-4">
               <Button
                 variant="outline"
                 onClick={() => setOpen(false)}
                 type="button"
+                disabled={createEventMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Event"}
+              <Button type="submit" disabled={createEventMutation.isPending}>
+                {createEventMutation.isPending ? "Creating..." : "Create Event"}
               </Button>
             </div>
           </form>
