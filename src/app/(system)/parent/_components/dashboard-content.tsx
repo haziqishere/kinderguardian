@@ -1,7 +1,6 @@
 // parent/_components/dashboard-content.tsx
 "use client";
 
-import { useState } from "react";
 import { DashboardStats } from "./dashboard-stats";
 import { AttendanceChart } from "./attendance-chart";
 import AlertList from "./alert-list";
@@ -78,7 +77,7 @@ export const DashboardContent = ({ childId }: DashboardContentProps) => {
   });
 
   return (
-    <div className="flex-1 p-8">
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
       <DashboardStats childStats={dashboardData.data.stats} />
       <AttendanceChart data={attendanceData} />

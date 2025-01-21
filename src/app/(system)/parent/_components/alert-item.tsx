@@ -98,19 +98,19 @@ export default function AlertItem({
   };
 
   return (
-    <div className="border-l-4 border-yellow-400 bg-white p-4 rounded shadow">
-      <div className="text-yellow-600 text-sm font-medium mb-4">
+    <div className="border-l-4 border-yellow-400 bg-white p-3 md:p-4 rounded shadow">
+      <div className="text-yellow-600 text-xs md:text-sm font-medium mb-3">
         {parentAction === "NO_RESPONSE" ? "PENDING RESPONSE" : parentAction}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Avatar>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-8 w-8 md:h-10 md:w-10">
             <AvatarImage src="" />
             <AvatarFallback>{name[0]}</AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <h3 className="font-medium">{name}</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-sm md:text-base font-medium">{name}</h3>
+            <p className="text-xs md:text-sm text-gray-500">
               {format(new Date(alertTime), "PPpp")}
             </p>
           </div>

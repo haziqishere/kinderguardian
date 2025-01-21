@@ -48,26 +48,31 @@ export default function ParentDashboard() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="bg-white rounded-md p-2 outline outline-1 outline-gray-200">
-          <ChildSwitcher
-            children={
-              children?.map((child) => ({
-                id: child.id,
-                name: child.fullName,
-                class: child.class || { id: "", name: "Unassigned" },
-                imageUrl: `/api/images/${child.id}`,
-              })) || []
-            }
-            selectedChild={selectedChild}
-            onChildChange={handleChildChange}
-            isLoading={isLoading}
-          />
+    <div className="flex flex-col p-4 space-y-6">
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
+        <div className="w-full md:w-auto ">
+          <div className="bg-white rounded-md  p-4 sm:p-3 shadow-sm border border-gray-200">
+            <ChildSwitcher
+              children={
+                children?.map((child) => ({
+                  id: child.id,
+                  name: child.fullName,
+                  class: child.class || { id: "", name: "Unassigned" },
+                  imageUrl: `/api/images/${child.id}`,
+                })) || []
+              }
+              selectedChild={selectedChild}
+              onChildChange={handleChildChange}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
 
-        <Link href="/parent/children-list/add-child">
-          <Button>
+        <Link
+          href="/parent/children-list/add-child"
+          className="w-full md:w-auto"
+        >
+          <Button className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Child
           </Button>
@@ -75,7 +80,7 @@ export default function ParentDashboard() {
       </div>
 
       {!children || children.length === 0 ? (
-        <div className="text-center py-10">
+        <div className="text-center py-6 md:py-10">
           <h3 className="text-lg font-semibold mb-2">No Children Added Yet</h3>
           <p className="text-muted-foreground mb-4">
             Start by adding your child to monitor their attendance and receive

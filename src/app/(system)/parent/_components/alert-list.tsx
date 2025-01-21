@@ -30,6 +30,11 @@ export default function AlertList({ childId }: AlertListProps) {
     },
   });
 
+  // Filter for unresolved alerts only
+  const unresolvedAlerts = alerts?.data?.filter(
+    (alert) => alert.parentAction === "NO_RESPONSE"
+  );
+
   if (isLoading) {
     return (
       <Card className="mb-8">
@@ -45,7 +50,7 @@ export default function AlertList({ childId }: AlertListProps) {
     );
   }
 
-  if (!alerts?.data || alerts.data.length === 0) {
+  if (!unresolvedAlerts || unresolvedAlerts.length === 0) {
     return (
       <Card className="mb-8">
         <CardHeader>
@@ -61,13 +66,13 @@ export default function AlertList({ childId }: AlertListProps) {
   }
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
+    <Card className="mb-4 md:mb-4">
+      <CardHeader className="p-4 md:p-6">
         <CardTitle>Alert List</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {alerts.data.map((alert) => (
+          {unresolvedAlerts.map((alert) => (
             <AlertItem
               key={alert.id}
               id={alert.id}

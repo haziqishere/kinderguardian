@@ -65,7 +65,7 @@ export function ChildSwitcher({
       <SelectTrigger className="w-[250px] border-0 bg-transparent p-0 hover:bg-transparent focus:ring-0">
         <SelectValue>
           <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-6 w-6 md:h-12 md:w-12">
               <AvatarFallback>
                 {selectedChild ? getInitials(selectedChild.name) : "?"}
               </AvatarFallback>
