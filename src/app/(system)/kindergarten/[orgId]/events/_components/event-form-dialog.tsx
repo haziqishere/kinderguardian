@@ -38,7 +38,7 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
   const { orgId } = useParams();
   const [open, setOpen] = useState(false);
 
-  const createEventMutation = useCreateEvent();
+  const createEventMutation = useCreateEvent(orgId as string);
 
   const form = useForm<EventSchemaType>({
     resolver: zodResolver(EventSchema),

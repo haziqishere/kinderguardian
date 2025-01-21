@@ -88,7 +88,7 @@ const HeroSection = () => {
               </Link>
             </Button>
           </div>
-          <div className="h-8 mt-4 md:mt-0">
+          <div className="h-8 mt-4 md:mt-0 mb-11">
             <TextReveal text="Welcome to the Future of kindergarten" />
           </div>
         </motion.div>

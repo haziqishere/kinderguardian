@@ -3,8 +3,6 @@ import { Logo } from "@/components/logo";
 import {
   Home,
   GraduationCap,
-  FileText,
-  Users,
   User,
   Settings,
   LogOut,

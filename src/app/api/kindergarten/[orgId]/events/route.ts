@@ -56,3 +56,27 @@ export async function GET(
     );
   }
 }
+
+export async function POST(
+  req: Request,
+  { params }: { params: { orgId: string } }
+) {
+  try {
+    const body = await req.json();
+    
+    const event = await db.event.create({
+      data: {
+        ...body,
+        kindergartenId: params.orgId,
+      },
+    });
+
+    return NextResponse.json({ data: event });
+  } catch (error) {
+    console.error("[EVENTS_POST]", error);
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    );
+  }
+}

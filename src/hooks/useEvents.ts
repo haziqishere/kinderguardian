@@ -33,12 +33,12 @@ export interface EventsData {
 }
 
 // Add this new hook for creating events
-export function useCreateEvent() {
+export function useCreateEvent(orgId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: EventSchemaType) => {
-      const response = await fetch('/api/kindergarten/events', {
+      const response = await fetch(`/api/kindergarten/${orgId}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,6 +63,10 @@ export function useEvents(kindergartenId: string) {
   return useQuery<EventsData>({
     queryKey: ['events', kindergartenId],
     queryFn: async () => {
+      if (!kindergartenId) {
+        throw new Error('Kindergarten ID is required');
+      }
+      
       console.log("Fetching events for kindergarten:", kindergartenId);
       
       const response = await fetch(`/api/kindergarten/${kindergartenId}/events`);
@@ -93,6 +97,8 @@ export function useEvents(kindergartenId: string) {
       console.log("Sorted events:", sorted);
       return sorted;
     },
+    // Disable the query if we don't have a kindergartenId
+    enabled: Boolean(kindergartenId),
     staleTime: 1000 * 60, // Cache for 1 minute
   });
 }

@@ -14,7 +14,7 @@ const features = [
     name: "Computer Vision & Deep Learning Pipeline",
     description:
       "Custom-trained Siamese Neural Network for facial recognition, comparing uploaded student photos from S3 storage with real-time camera feeds. Achieved reliable student attendance verification through dual-input architecture and contrastive loss optimization.",
-    href: "/",
+    href: "https://github.com/haziqishere/kinderguardian",
     cta: "Technical Details",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 opacity-50" />
@@ -26,7 +26,7 @@ const features = [
     name: "Scalable Data Architecture",
     description:
       "Designed a robust data pipeline using AWS S3 for raw image storage, RDS for metadata management, and Snowflake for analytics. Implemented data versioning and automated ETL processes.",
-    href: "/",
+    href: "https://github.com/haziqishere/kinderguardian",
     cta: "Architecture Diagram",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50" />
@@ -38,7 +38,7 @@ const features = [
     name: "System Performance",
     description:
       "Optimized inference time to <100ms using model quantization and ONNX runtime. Implemented load balancing and caching strategies for handling concurrent user requests.",
-    href: "/",
+    href: "https://github.com/haziqishere/kinderguardian",
     cta: "Performance Metrics",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-teal-50 opacity-50" />
@@ -50,7 +50,7 @@ const features = [
     name: "Technical Implementation",
     description:
       "Built with Next.js 14, TypeScript, and TailwindCSS for the frontend. Leveraged AWS Lambda for serverless compute, implemented CI/CD with GitHub Actions, and maintained 90%+ test coverage.",
-    href: "/",
+    href: "https://github.com/haziqishere/kinderguardian",
     cta: "Code Architecture",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-yellow-50 opacity-50" />
