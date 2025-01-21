@@ -31,7 +31,7 @@ const features = [
 const HeroSection = () => {
   return (
     <section className="relative min-h-[200vh] bg-white">
-      <div className="absolute inset-0  sm:left-[-50%] [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]">
+      <div className="absolute inset-0 max-sm:left-[-50%] [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#63e_100%)]">
         <Meteors number={20} />
       </div>
 

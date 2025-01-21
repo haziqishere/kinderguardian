@@ -73,6 +73,19 @@ const DUMMY_STUDENTS: DummyStudent[] = [
 ];
 
 export default function ReportPage() {
+  return (
+    <div className="min-h-[80vh] flex flex-col items-center justify-center">
+      <h1 className="text-3xl font-bold tracking-tight mb-4">
+        🔨Report Feature
+      </h1>
+      <p className="text-muted-foreground text-lg">
+        We're working hard to bring you detailed student reports.
+      </p>
+      <p className="text-muted-foreground">Check back soon!</p>
+    </div>
+  );
+}
+/* export default function ReportPage() {
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -220,3 +233,4 @@ export default function ReportPage() {
     </div>
   );
 }
+ */
