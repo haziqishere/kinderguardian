@@ -129,17 +129,21 @@ const TechnicalSection = () => {
                   ))}
                 </div>
               </RippleCard>
-              <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6">
+              <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 overflow-hidden">
                 <h3 className="mb-3 md:mb-4 text-lg md:text-xl font-semibold">
                   Face Recognition Flow
                 </h3>
-                <MPIflow />
+                <div className="w-full overflow-hidden">
+                  <MPIflow />
+                </div>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-white p-6">
-                <h3 className="mb-4 text-xl font-semibold">
+              <div className="rounded-xl border border-gray-200 bg-white p-4 md:p-6 overflow-hidden">
+                <h3 className="mb-3 md:mb-4 text-lg md:text-xl font-semibold">
                   Notification System
                 </h3>
-                <LLMflow />
+                <div className="w-full overflow-hidden">
+                  <LLMflow />
+                </div>
               </div>
             </div>
           </div>
