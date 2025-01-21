@@ -1,68 +1,59 @@
-import Image from "next/image";
 import {
-  GlobeIcon,
-  ShoppingCartIcon,
-  PackageIcon,
-  TramFrontIcon,
+  CodeIcon,
+  DatabaseIcon,
+  BrainCircuitIcon,
+  CpuIcon,
 } from "lucide-react";
 
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid";
 import { cn } from "@/lib/utils";
-import { MPIflow } from "@/app/(landing page)/_component/animatedbeam-MPI";
-import { LLMflow } from "@/app/(landing page)/_component/animatedbeam-LLM";
 
 const features = [
   {
-    Icon: GlobeIcon,
-    name: "Analyze Market Performance with NLP Transformers",
+    Icon: BrainCircuitIcon,
+    name: "Computer Vision & Deep Learning Pipeline",
     description:
-      "Offers a cumulative score from recent market news, helping SMEs make quick, informed decisions.",
+      "Custom-trained Siamese Neural Network for facial recognition, comparing uploaded student photos from S3 storage with real-time camera feeds. Achieved reliable student attendance verification through dual-input architecture and contrastive loss optimization.",
     href: "/",
-    cta: "Learn more",
+    cta: "Technical Details",
     background: (
-      <>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 opacity-50 z-0" />
-        <MPIflow className="absolute right-2 top-4 h-[300px] border-none transition-all duration-300 ease-out [mask-image:linear-gradient(to_bottom,transparent_2%,#000_40%)]  group-hover:scale-105 z-10" />
-      </>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 opacity-50" />
     ),
     className: "lg:col-span-2 lg:row-span-1",
   },
   {
-    Icon: ShoppingCartIcon,
-    name: " Dashboard",
+    Icon: DatabaseIcon,
+    name: "Scalable Data Architecture",
     description:
-      "historical GDP trends by sector, helping businesses make informed decisions.",
+      "Designed a robust data pipeline using AWS S3 for raw image storage, RDS for metadata management, and Snowflake for analytics. Implemented data versioning and automated ETL processes.",
     href: "/",
-    cta: "Learn more",
+    cta: "Architecture Diagram",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-pink-50 opacity-50" />
     ),
     className: "lg:col-span-1 lg:row-span-1",
   },
   {
-    Icon: TramFrontIcon,
-    name: "Easy Integrations",
+    Icon: CpuIcon,
+    name: "System Performance",
     description:
-      "For future improvement, system is able to receive data from government agencies to provide a comprehensive view of your business.",
+      "Optimized inference time to <100ms using model quantization and ONNX runtime. Implemented load balancing and caching strategies for handling concurrent user requests.",
     href: "/",
-    cta: "Learn more",
+    cta: "Performance Metrics",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-teal-50 opacity-50" />
     ),
     className: "lg:col-span-1 lg:row-span-1",
   },
   {
-    Icon: PackageIcon,
-    name: "LLM Recommends Loan & Grants",
+    Icon: CodeIcon,
+    name: "Technical Implementation",
     description:
-      "Matches SMEs with suitable financial programs to reduce reliance on expensive loans.",
+      "Built with Next.js 14, TypeScript, and TailwindCSS for the frontend. Leveraged AWS Lambda for serverless compute, implemented CI/CD with GitHub Actions, and maintained 90%+ test coverage.",
     href: "/",
-    cta: "Learn more",
+    cta: "Code Architecture",
     background: (
-      <div>
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-yellow-50 opacity-50" />
-        <LLMflow className="absolute right-2 top-4 h-[300px] border-none transition-all duration-300 ease-out [mask-image:linear-gradient(to_top,transparent_2%,#000_30%)] group-hover:scale-105 z-10" />
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-yellow-50 opacity-50" />
     ),
     className: "lg:col-span-2 lg:row-span-1",
   },
