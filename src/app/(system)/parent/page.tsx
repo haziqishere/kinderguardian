@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useChildren } from "@/hooks/use-children";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ParentDashboard() {
   const { data: children, isLoading } = useChildren();

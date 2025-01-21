@@ -23,7 +23,7 @@ export async function GET(
           orderBy: {
             alertTime: 'desc'
           },
-          take: 5,
+          take: 20,
           select: {
             id: true,
             alertTime: true,
