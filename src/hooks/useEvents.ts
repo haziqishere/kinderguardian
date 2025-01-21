@@ -115,3 +115,25 @@ export function useClasses(kindergartenId: string) {
     }
   });
 }
+
+export function useChildEvents(childId: string) {
+  return useQuery<EventsData>({
+    queryKey: ['events', childId],
+    queryFn: async () => {
+      if (!childId) return { upcoming: [], past: [] };
+      
+      const response = await fetch(`/api/parent/children/${childId}/events`);
+      if (!response.ok) throw new Error('Failed to fetch events');
+      
+      const data = await response.json();
+      const now = new Date();
+      const events = data.data || [];
+      
+      return {
+        upcoming: events.filter((e: Event) => new Date(e.startDate) >= now),
+        past: events.filter((e: Event) => new Date(e.startDate) < now)
+      };
+    },
+    enabled: Boolean(childId)
+  });
+}

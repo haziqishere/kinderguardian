@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { EventSchema, EventSchemaType } from "@/actions/event/schema";
 import { toast } from "sonner";
 import { useCreateEvent } from "@/hooks/useEvents";
+import { UserType } from "@prisma/client";
 
 import {
   Dialog,
@@ -52,6 +53,7 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
       endDate: new Date(),
       isAllDay: false,
       kindergartenId: orgId as string,
+      classId: [],
     },
   });
 
@@ -178,11 +180,32 @@ export function EventFormDialog({ classes }: EventFormDialogProps) {
                   <FormControl>
                     <MultiSelect
                       options={[
-                        { value: "ALL", label: "All" },
-                        { value: "PARENT", label: "Parents" },
-                        { value: "TEACHER", label: "Teachers" },
-                        { value: "STUDENT", label: "Students" },
+                        { value: UserType.ALL, label: "All" },
+                        { value: UserType.PARENT, label: "Parents" },
+                        { value: UserType.TEACHER, label: "Teachers" },
+                        { value: UserType.STUDENT, label: "Students" },
                       ]}
+                      selected={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="classId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select Classes</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={classes.map((c) => ({
+                        value: c.id,
+                        label: c.name,
+                      }))}
                       selected={field.value}
                       onChange={field.onChange}
                     />

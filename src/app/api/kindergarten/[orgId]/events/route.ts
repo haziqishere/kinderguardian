@@ -8,29 +8,29 @@ export async function GET(
   { params }: { params: { orgId: string } }
 ) {
   try {
-    console.log("API: Fetching events for kindergarten:", params.orgId);
+    const { searchParams } = new URL(req.url);
+    const classIds = searchParams.get('classIds')?.split(',') || [];
+    const userType = searchParams.get('userType') as UserType || UserType.ALL;
 
     const events = await db.event.findMany({
       where: {
         kindergartenId: params.orgId,
-        // Remove the targetAudience filter for now
-        // OR modify it to include empty arrays
-        OR: [
+        AND: [
           {
-            targetAudience: {
-              has: UserType.ALL
-            }
+            OR: [
+              { targetAudience: { has: UserType.ALL } },
+              { targetAudience: { has: userType } }
+            ]
           },
-          {
-            targetAudience: {
-              has: UserType.ADMIN
+          classIds.length > 0 ? {
+            classes: {
+              some: {
+                classId: {
+                  in: classIds
+                }
+              }
             }
-          },
-          {
-            targetAudience: {
-              isEmpty: true
-            }
-          }
+          } : {}
         ]
       },
       include: {
@@ -44,8 +44,6 @@ export async function GET(
         startDate: 'desc'
       }
     });
-
-    console.log("API: Found events:", events);
 
     return NextResponse.json({ data: events });
   } catch (error) {
@@ -63,19 +61,39 @@ export async function POST(
 ) {
   try {
     const body = await req.json();
+    console.log("Received body:", body);
     
+    const { classId, ...eventData } = body;
+
     const event = await db.event.create({
       data: {
-        ...body,
+        ...eventData,
         kindergartenId: params.orgId,
+        classes: {
+          create: classId.map((id: string) => ({
+            class: {
+              connect: {
+                id: id
+              }
+            }
+          }))
+        }
       },
+      include: {
+        classes: {
+          include: {
+            class: true
+          }
+        }
+      }
     });
 
     return NextResponse.json({ data: event });
   } catch (error) {
-    console.error("[EVENTS_POST]", error);
+    console.error("[EVENTS_POST] Full error:", error);
+    console.error("[EVENTS_POST] Error message:", (error as Error).message);
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: "Failed to create event: " + (error as Error).message },
       { status: 500 }
     );
   }

@@ -208,26 +208,41 @@ export function StudentProfile({ student }: StudentProfileProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-8">
-                {student.attendance.map((record) => (
-                  <div
-                    key={record.date}
-                    className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 last:border-0"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-medium">{formatDate(record.date)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Recorded at {formatTime(record.timeRecorded)}
-                      </p>
-                    </div>
-                    <Badge
-                      className={`mt-2 md:mt-0 ${getStatusColor(
-                        record.status
-                      )}`}
+                {student.attendance.map((record) => {
+                  // Find corresponding alert for this attendance date
+                  const alert = student.alertLogs.find(
+                    (log) =>
+                      new Date(log.alertTime).toDateString() ===
+                      new Date(record.date).toDateString()
+                  );
+
+                  return (
+                    <div
+                      key={record.date}
+                      className="flex flex-col md:flex-row md:items-start justify-between border-b pb-4 last:border-0"
                     >
-                      {record.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-                ))}
+                      <div className="space-y-1">
+                        <p className="font-medium">{formatDate(record.date)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Recorded at {formatTime(record.timeRecorded)}
+                        </p>
+                        {record.status === "ABSENT" &&
+                          alert?.parentAction === "RESPONDED" && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Reason: {alert.reason || "No reason provided"}
+                            </p>
+                          )}
+                      </div>
+                      <Badge
+                        className={`mt-2 md:mt-0 ${getStatusColor(
+                          record.status
+                        )}`}
+                      >
+                        {record.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

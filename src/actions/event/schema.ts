@@ -2,19 +2,21 @@ import { z } from "zod";
 import { EventType, UserType } from "@prisma/client";
 
 export const EventSchema = z.object({
-    id: z.string().optional(),
     title: z.string().min(1, "Title is required"),
-    description: z.string().min(1, "Description is required"),
-    startDate: z.date(),
-    endDate: z.date(),
+    description: z.string(),
     location: z.string().min(1, "Location is required"),
     type: z.nativeEnum(EventType),
-    kindergartenId: z.string().min(1, "Kindergarten ID is required"),
-    targetAudience: z.nativeEnum(UserType).array(),
+    targetAudience: z.array(z.nativeEnum(UserType)),
+    startDate: z.coerce.date({
+      required_error: "Start date is required",
+    }),
+    endDate: z.coerce.date({
+      required_error: "End date is required",
+    }),
     isAllDay: z.boolean(),
-    createdAt: z.date().optional(),
-    updatedAt: z.date().optional(),
-});
+    kindergartenId: z.string(),
+    classId: z.array(z.string()).min(1, "At least one class must be selected")
+  });
 
 export const EventWithAttendeesSchema = EventSchema.extend({
     attendees: z.array(z.object({

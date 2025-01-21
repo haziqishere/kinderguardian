@@ -17,14 +17,17 @@ interface Event {
   endDate: string;
   location: string;
   type: string;
+  classes: Array<{
+    classId: string;
+  }>;
 }
 
 const EventList = ({ classId, kindergartenId }: EventListProps) => {
   const { data: events, isLoading } = useQuery<{ data: Event[] }>({
-    queryKey: ["events", kindergartenId],
+    queryKey: ["events", kindergartenId, classId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/kindergarten/${kindergartenId}/events`
+        `/api/kindergarten/${kindergartenId}/events?classIds=${classId}&userType=PARENT`
       );
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
@@ -68,23 +71,29 @@ const EventList = ({ classId, kindergartenId }: EventListProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {events.data.map((event) => (
-            <div
-              key={event.id}
-              className="space-y-2 rounded-xl p-3 shadow-xs border outline-0"
-            >
-              <h3 className="text-blue-600 font-medium hover:underline cursor-pointer">
-                {event.title}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {format(new Date(event.startDate), "d MMMM yyyy")}
-              </p>
-              <p className="text-sm text-gray-600">{event.description}</p>
-              <p className="text-sm text-gray-500">
-                Location: {event.location}
-              </p>
-            </div>
-          ))}
+          {events?.data
+            .sort(
+              (a, b) =>
+                new Date(a.startDate).getTime() -
+                new Date(b.startDate).getTime()
+            )
+            .map((event) => (
+              <div
+                key={event.id}
+                className="space-y-2 rounded-xl p-3 shadow-xs border outline-0"
+              >
+                <h3 className="text-blue-600 font-medium hover:underline cursor-pointer">
+                  {event.title}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {format(new Date(event.startDate), "d MMMM yyyy")}
+                </p>
+                <p className="text-sm text-gray-600">{event.description}</p>
+                <p className="text-sm text-gray-500">
+                  Location: {event.location}
+                </p>
+              </div>
+            ))}
         </div>
       </CardContent>
     </Card>

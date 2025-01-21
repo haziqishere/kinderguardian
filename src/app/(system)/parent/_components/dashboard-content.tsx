@@ -77,7 +77,7 @@ export const DashboardContent = ({ childId }: DashboardContentProps) => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-68">
       <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
       <DashboardStats childStats={dashboardData.data.stats} />
       <AttendanceChart data={attendanceData} />
