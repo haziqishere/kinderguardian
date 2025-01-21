@@ -62,11 +62,12 @@ const HeroSection = () => {
                     ease: "linear",
                   }}
                 />
+
                 <span className="relative">
                   <span className=" text-3xl md:text-4xl lg:text-7xl block md:inline">
                     Next Generation Kindergarten
                   </span>{" "}
-                  <AuroraText className="text-3xl md:text-4xl lg:text-7xl">
+                  <AuroraText className="text-4xl font-bold tracking-tighter md:text-5xl lg:text-7xl">
                     Management
                   </AuroraText>
                 </span>
