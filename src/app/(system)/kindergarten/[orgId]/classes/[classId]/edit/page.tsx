@@ -30,10 +30,23 @@ interface EditClassPageProps {
   };
 }
 
+type ClassData = {
+  id: string;
+  name: string;
+  capacity: number;
+  kindergartenId: string;
+  description?: string;
+  studentCount: number;
+  _count: { students: number };
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export default function EditClassPage({ params }: EditClassPageProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [classData, setClassData] = useState<ClassData | null>(null);
 
   const form = useForm<UpdateClassSchemaType>({
     resolver: zodResolver(UpdateClassSchema),
@@ -54,8 +67,11 @@ export default function EditClassPage({ params }: EditClassPageProps) {
           toast.error(response.error || "No data found");
           return;
         }
-
         // Update form with fetched data
+        setClassData({
+          ...response.data,
+          description: response.data.description ?? undefined,
+        });
         form.reset({
           id: params.classId,
           name: response.data.name,
@@ -71,7 +87,7 @@ export default function EditClassPage({ params }: EditClassPageProps) {
     };
 
     fetchClass();
-  }, [params.classId, params.orgId]);
+  }, [params.classId, params.orgId, form]);
 
   const onSubmit = async (data: UpdateClassSchemaType) => {
     try {
@@ -140,14 +156,14 @@ export default function EditClassPage({ params }: EditClassPageProps) {
                 name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Student Capacity</FormLabel>
+                    <FormLabel>Capacity</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        min={1}
-                        max={40}
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />

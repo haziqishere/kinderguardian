@@ -45,7 +45,8 @@ const handler = async (data: StudentSchemaType) => {
           select: {
             students: true
           }
-        }
+        },
+        kindergarten: true
       }
     });
 
@@ -73,7 +74,7 @@ const handler = async (data: StudentSchemaType) => {
       for (const type of imageTypes) {
         const imageData = data.faceImages[type];
         if (imageData) {
-          const key = await uploadStudentImage(data.parentId, imageData, type,);
+          const key = await uploadStudentImage(classData.kindergarten.id, data.parentId, imageData, type);
           if (!key) {
             throw new Error(`Failed to upload ${type} image`);
           }

@@ -16,7 +16,7 @@ const handler = async (data: AttendanceSchemaType) => {
         });
 
         return { data: attendance };
-    } catch (error) {
+    } catch (_error) {
         return { error: "Failed to create attendance record." };
     }
 };

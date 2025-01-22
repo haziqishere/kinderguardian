@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { EventSchema, EventSchemaType, EventWithAttendeesSchema } from "./schema";
+import { EventSchema, EventSchemaType} from "./schema";
 import { createSafeAction } from "@/lib/create-safe-action";
 import { z } from "zod";
 import { UserType } from "@prisma/client";

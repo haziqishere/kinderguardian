@@ -33,7 +33,7 @@ const handler = async (data: z.infer<typeof ResolveAlertSchema>) => {
     });
 
     return { success: true };
-  } catch (error) {
+  } catch (_error) {
     return { error: "Failed to resolve alert" };
   }
 };

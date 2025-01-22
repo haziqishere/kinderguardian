@@ -15,6 +15,19 @@ export interface Student {
   attendancePerformance: string;
 }
 
+const Cell = ({ row }: { row: any }) => {
+  const params = useParams();
+  const student = row.original;
+
+  return (
+    <Button variant="ghost" size="icon" asChild>
+      <Link href={`/kindergarten/${params.orgId}/student-list/${student.id}`}>
+        <Eye className="w-4 h-4" />
+      </Link>
+    </Button>
+  );
+};
+
 export const columns: ColumnDef<Student>[] = [
   {
     accessorKey: "name",
@@ -38,19 +51,6 @@ export const columns: ColumnDef<Student>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const params = useParams();
-      const student = row.original;
-
-      return (
-        <Button variant="ghost" size="icon" asChild>
-          <Link
-            href={`/kindergarten/${params.orgId}/student-list/${student.id}`}
-          >
-            <Eye className="w-4 h-4" />
-          </Link>
-        </Button>
-      );
-    },
+    cell: Cell,
   },
 ];

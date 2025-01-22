@@ -1,4 +1,4 @@
-// app/(system)/kindergarten/[orgId]/student-list/[studentId]/page.tsx
+// app/(system)/kindergarten/[orgId]/student-list/[studentID]/page.tsx
 "use client";
 
 import { useStudent } from "@/hooks/useStudents";
@@ -11,13 +11,10 @@ import { Button } from "@/components/ui/button";
 export default function StudentPage() {
   const params = useParams();
   const router = useRouter();
-
-  // Log params to see what we're getting
-  console.log("URL Params:", params);
-
-  // The parameter name in the URL is 'studentID' (with capital 'ID')
   const studentId = params.studentID as string;
+  const { data: student, isLoading } = useStudent(studentId ?? "");
 
+  // Render missing student ID state
   if (!studentId) {
     return (
       <div className="p-6">
@@ -30,9 +27,8 @@ export default function StudentPage() {
     );
   }
 
-  const { data, isLoading, error } = useStudent(studentId);
-
-  if (isLoading) {
+  // Render loading state
+  if (isLoading || !student) {
     return (
       <div className="p-6">
         <Card>
@@ -41,28 +37,6 @@ export default function StudentPage() {
             <p className="text-muted-foreground mt-2">
               Loading student profile...
             </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="p-6">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Student List
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="py-10 text-center text-destructive">
-            {error?.message || "Failed to load student profile"}
           </CardContent>
         </Card>
       </div>
@@ -82,7 +56,7 @@ export default function StudentPage() {
         </Button>
       </div>
       <div className="space-y-6">
-        <StudentProfile student={data.data} />
+        <StudentProfile student={student} />
       </div>
     </div>
   );

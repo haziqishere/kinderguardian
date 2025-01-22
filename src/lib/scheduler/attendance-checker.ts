@@ -1,6 +1,6 @@
 // src/lib/scheduler/attendance-check.ts
 import { db } from "@/lib/db";
-import { DayOfWeek, AttendanceStatus } from "@prisma/client";
+import { DayOfWeek, AttendanceStatus, ParentAction, AlertType } from "@prisma/client";
 import { format, parse, isWithinInterval } from "date-fns";
 
 async function isHoliday(kindergartenId: string, date: Date) {
@@ -101,29 +101,64 @@ export class AttendanceScheduler {
             if (student.attendance.some(a => 
               ([AttendanceStatus.ON_TIME, AttendanceStatus.LATE] as AttendanceStatus[]).includes(a.status)
             )) {
+              console.log(`Skipping ${student.fullName} - Already marked present`);
+              continue;
+            }
+
+            // Skip if already marked as absent
+            if (student.attendance.some(a => a.status === AttendanceStatus.ABSENT)) {
+              console.log(`Skipping ${student.fullName} - Already marked absent`);
               continue;
             }
 
             const lastAlert = student.alertLogs[0];
             const currentTime = parse(format(now, 'HH:mm:ss'), 'HH:mm:ss', now);
 
+            // Skip if parent has already responded to an alert today
+            if (lastAlert?.parentAction === ParentAction.RESPONDED) {
+              console.log(`Skipping ${student.fullName} - Parent already responded`);
+              continue;
+            }
+
             // Send first alert (message)
-            if (currentTime >= messageThreshold && !lastAlert) {
+            if (currentTime >= messageThreshold && (!lastAlert || lastAlert.alertType !== AlertType.MESSAGED)) {
               console.log(`Sending message alert for ${student.fullName}`);
               await fetch(
                 `${process.env.NEXT_PUBLIC_APP_URL}/api/test/emailAlert?studentId=${student.id}&type=message`
               );
+              
+              // Create alert log
+              await db.alertLog.create({
+                data: {
+                  studentId: student.id,
+                  alertTime: now,
+                  alertType: AlertType.MESSAGED,
+                  parentAction: ParentAction.NO_RESPONSE,
+                  reason: "Student not present by message threshold"
+                }
+              });
               continue;
             }
 
             // Send second alert (call)
             if (currentTime >= callThreshold && 
-                lastAlert && 
-                lastAlert.alertTime < callThreshold) {
+                lastAlert?.alertType === AlertType.MESSAGED && 
+                !student.alertLogs.some(log => log.alertType === AlertType.CALLED)) {
               console.log(`Sending call alert for ${student.fullName}`);
               await fetch(
                 `${process.env.NEXT_PUBLIC_APP_URL}/api/test/emailAlert?studentId=${student.id}&type=call`
               );
+              
+              // Create alert log
+              await db.alertLog.create({
+                data: {
+                  studentId: student.id,
+                  alertTime: now,
+                  alertType: AlertType.CALLED,
+                  parentAction: ParentAction.NO_RESPONSE,
+                  reason: "Student not present by call threshold"
+                }
+              });
             }
           }
         }
