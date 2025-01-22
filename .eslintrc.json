@@ -6,6 +6,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   "root": true,
   "rules": {
     "@typescript-eslint/no-unused-vars": ["warn", {
@@ -20,6 +21,11 @@
   "rules": {
     "@typescript-eslint/no-unused-vars": "warn",
     "@typescript-eslint/no-explicit-any": "off",
+=======
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
+>>>>>>> Stashed changes
     "@typescript-eslint/no-empty-interface": "warn",
     "react-hooks/rules-of-hooks": "warn",
 >>>>>>> Stashed changes
@@ -29,9 +35,13 @@
     "react/no-unescaped-entities": "off",
     "prefer-const": "warn",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "@typescript-eslint/no-empty-interface": ["error", {
       "allowSingleExtends": true
     }]
+=======
+    "no-var": "off"
+>>>>>>> Stashed changes
 =======
     "no-var": "off"
 >>>>>>> Stashed changes
