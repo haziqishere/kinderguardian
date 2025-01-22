@@ -5,6 +5,7 @@
   ],
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
+<<<<<<< Updated upstream
   "root": true,
   "rules": {
     "@typescript-eslint/no-unused-vars": ["warn", {
@@ -15,13 +16,24 @@
     }],
     "@typescript-eslint/no-explicit-any": "off",
     "react-hooks/rules-of-hooks": "error",
+=======
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-empty-interface": "warn",
+    "react-hooks/rules-of-hooks": "warn",
+>>>>>>> Stashed changes
     "react-hooks/exhaustive-deps": "warn",
     "@next/next/no-img-element": "warn",
     "react/no-children-prop": "warn",
     "react/no-unescaped-entities": "off",
     "prefer-const": "warn",
+<<<<<<< Updated upstream
     "@typescript-eslint/no-empty-interface": ["error", {
       "allowSingleExtends": true
     }]
+=======
+    "no-var": "off"
+>>>>>>> Stashed changes
   }
 }

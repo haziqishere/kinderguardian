@@ -1,17 +1,20 @@
-import React from "react";
+import React, { ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
+<<<<<<< Updated upstream
 import { ButtonProps } from "@/components/ui/button";
 
 interface RainbowButtonProps extends ButtonProps {
   children: React.ReactNode;
 }
+=======
+>>>>>>> Stashed changes
 
 export function RainbowButton({
   children,
   className,
   ...props
-}: RainbowButtonProps) {
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={cn(
