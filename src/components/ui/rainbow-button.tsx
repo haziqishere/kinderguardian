@@ -1,11 +1,8 @@
 import React from "react";
 
 import { cn } from "@/lib/utils";
-import { ButtonProps } from "@/components/ui/button";
-
-interface RainbowButtonProps extends ButtonProps {
-  children: React.ReactNode;
-}
+interface RainbowButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 export function RainbowButton({
   children,
@@ -26,7 +23,7 @@ export function RainbowButton({
         // dark mode colors
         "dark:bg-[linear-gradient(#fff,#fff),linear-gradient(#fff_50%,rgba(255,255,255,0.6)_80%,rgba(0,0,0,0)),linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))]",
 
-        className
+        className,
       )}
       {...props}
     >

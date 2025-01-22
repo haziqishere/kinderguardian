@@ -30,8 +30,8 @@ const leaveKindergartenHandler = async (data: z.infer<typeof LeaveKindergartenSc
     });
 
     return { data: updatedAdmin };
-  } catch (_error) {
-    return { success: false, message: "Failed to process request" };
+  } catch (error) {
+    return { error: "Failed to leave kindergarten" };
   }
 };
 

@@ -1,7 +1,7 @@
 // parent/children-list/add-child/_components/basic-info-form.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   FormControl,
   FormField,
@@ -51,12 +51,10 @@ export const BasicInfoForm = ({ form }: BasicInfoFormProps) => {
     kindergartens?.find((k) => k.id === selectedKindergarten)?.classes
   );
 
-  const availableClasses = useMemo(() => {
-    return (
-      kindergartens?.find((k) => k.id === selectedKindergarten)?.classes || []
-    );
-  }, [selectedKindergarten, kindergartens]);
+  const availableClasses =
+    kindergartens?.find((k) => k.id === selectedKindergarten)?.classes || [];
 
+  // Reset class selection when kindergarten changes
   useEffect(() => {
     if (selectedKindergarten && form.getValues("classId")) {
       const classId = form.getValues("classId");

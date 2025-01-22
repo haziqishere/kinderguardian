@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    console.log("[KINDERGARTENS_GET] Starting kindergarten fetch");
+    
     const kindergartens = await db.kindergarten.findMany({
       select: {
         id: true,
@@ -20,30 +22,61 @@ export async function GET() {
             }
           }
         }
+      },
+      orderBy: {
+        createdAt: 'desc' // Show newest first
       }
     });
 
-    // Transform the data to include availability info
-    const formattedKindergartens = kindergartens.map(k => ({
-      id: k.id,
-      name: k.name,
-      classes: k.classes.map(c => ({
-        id: c.id,
-        name: c.name,
-        capacity: c.capacity,
-        _count: {
-          students: c.students.length
-        },
-        available: c.capacity > c.students.length
-      })).filter(c => c.available) // Only return classes with available spots
-    })).filter(k => k.classes.length > 0); // Only return kindergartens with available classes
+    console.log("[KINDERGARTENS_GET] Found kindergartens:", kindergartens.length);
 
-    return NextResponse.json({ data: formattedKindergartens });
+    // Transform with better logging
+    const formattedKindergartens = kindergartens.map(k => {
+      console.log(`[KINDERGARTENS_GET] Processing ${k.name}, classes: ${k.classes.length}`);
+      
+      const availableClasses = k.classes.map(c => {
+        const studentCount = c.students.length;
+        const hasSpace = c.capacity > studentCount;
+        
+        console.log(`[KINDERGARTENS_GET] Class ${c.name}: capacity=${c.capacity}, students=${studentCount}, available=${hasSpace}`);
+        
+        return {
+          id: c.id,
+          name: c.name,
+          capacity: c.capacity,
+          _count: {
+            students: studentCount
+          },
+          available: hasSpace
+        };
+      });
+
+      // Include all kindergartens, even those without available classes
+      return {
+        id: k.id,
+        name: k.name,
+        classes: availableClasses,
+        hasAvailableSpots: availableClasses.some(c => c.available)
+      };
+    });
+
+    console.log("[KINDERGARTENS_GET] Formatted response:", 
+      JSON.stringify(formattedKindergartens, null, 2));
+
+    return NextResponse.json({ 
+      success: true,
+      data: formattedKindergartens,
+      timestamp: new Date().toISOString()
+    });
+
   } catch (error) {
-    console.error("[KINDERGARTENS_GET]", error);
-    return NextResponse.json(
-      { error: "Failed to fetch kindergartens" },
-      { status: 500 }
-    );
+    console.error("[KINDERGARTENS_GET] Error:", error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch kindergartens",
+      timestamp: new Date().toISOString()
+    }, { 
+      status: 500 
+    });
   }
 }
