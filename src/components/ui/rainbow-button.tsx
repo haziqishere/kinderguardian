@@ -3,11 +3,14 @@ import React, { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { ButtonProps } from "@/components/ui/button";
 
 interface RainbowButtonProps extends ButtonProps {
   children: React.ReactNode;
 }
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
