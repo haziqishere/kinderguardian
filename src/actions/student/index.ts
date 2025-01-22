@@ -58,54 +58,72 @@ const handler = async (data: StudentSchemaType) => {
       return { error: "Class is full" };
     }
 
-    // Upload all images to S3 with proper error handling
-    const imageKeys = {
-      front: null as string | null,
-      left: null as string | null,
-      right: null as string | null,
-      tiltUp: null as string | null,
-      tiltDown: null as string | null,
-    };
-
-    try {
-      // Upload images sequentially to maintain order and handle errors
-      const imageTypes = ['front', 'left', 'right', 'tiltUp', 'tiltDown'] as const;
-      for (const type of imageTypes) {
-        const imageData = data.faceImages[type];
-        if (imageData) {
-          const key = await uploadStudentImage(data.parentId, imageData, type,);
-          if (!key) {
-            throw new Error(`Failed to upload ${type} image`);
-          }
-          imageKeys[type] = key;
-          uploadedImageKeys.push(key);
-        }
-      }
-    } catch (uploadError) {
-      // If any upload fails, we need to clean up the already uploaded images
-      console.error('[IMAGE_UPLOAD_ERROR]:', uploadError);
-      throw new Error('Failed to upload all required images');
-    }
-
     // Calculate age from date of birth
     const age = new Date().getFullYear() - new Date(data.dateOfBirth).getFullYear();
 
     // Create student with transaction to ensure all related data is created
     const student = await db.$transaction(async (tx) => {
-      // Create student
+      // Create student first
       const newStudent = await tx.student.create({
         data: {
           fullName: data.fullName,
           age,
           classId: data.classId,
           parentId: data.parentId,
-          faceImageFront: imageKeys.front,
-          faceImageLeft: imageKeys.left,
-          faceImageRight: imageKeys.right,
-          faceImageTiltUp: imageKeys.tiltUp,
-          faceImageTiltDown: imageKeys.tiltDown,
+          // Initialize image fields as null
+          faceImageFront: null,
+          faceImageLeft: null,
+          faceImageRight: null,
+          faceImageTiltUp: null,
+          faceImageTiltDown: null,
         }
       });
+
+      // Now upload images with the correct studentId
+      const imageKeys = {
+        front: null as string | null,
+        left: null as string | null,
+        right: null as string | null,
+        tiltUp: null as string | null,
+        tiltDown: null as string | null,
+      };
+
+      try {
+        // Upload images sequentially to maintain order and handle errors
+        const imageTypes = ['front', 'left', 'right', 'tiltUp', 'tiltDown'] as const;
+        for (const type of imageTypes) {
+          const imageData = data.faceImages[type];
+          if (imageData) {
+            const key = await uploadStudentImage(
+              data.kindergartenId,
+              newStudent.id, // Now we have the actual studentId
+              imageData,
+              type
+            );
+            if (!key) {
+              throw new Error(`Failed to upload ${type} image`);
+            }
+            imageKeys[type] = key;
+            uploadedImageKeys.push(key);
+          }
+        }
+
+        // Update student with image keys
+        await tx.student.update({
+          where: { id: newStudent.id },
+          data: {
+            faceImageFront: imageKeys.front,
+            faceImageLeft: imageKeys.left,
+            faceImageRight: imageKeys.right,
+            faceImageTiltUp: imageKeys.tiltUp,
+            faceImageTiltDown: imageKeys.tiltDown,
+          }
+        });
+      } catch (uploadError) {
+        // If any upload fails, we need to clean up the already uploaded images
+        console.error('[IMAGE_UPLOAD_ERROR]:', uploadError);
+        throw new Error('Failed to upload all required images');
+      }
 
       // Create phone numbers
       await tx.parentPhoneNumber.createMany({

@@ -1,28 +1,10 @@
-// src/app/api/cron/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { AttendanceStatus, AlertType, ParentAction } from "@prisma/client";
 import { format } from "date-fns";
 
-// Verify cron secret to ensure only authorized calls
-function verifyCronSecret(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET_KEY;
-  
-  if (!cronSecret) {
-    throw new Error("CRON_SECRET_KEY not configured");
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    throw new Error("Unauthorized");
-  }
-}
-
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    // Verify the request is from our cron job
-    verifyCronSecret(request);
-
     // Get all kindergartens and their settings
     const kindergartens = await db.kindergarten.findMany({
       include: {
@@ -70,8 +52,7 @@ export async function POST(request: Request) {
                 studentId: student.id,
                 alertTime: {
                   gte: new Date(today)
-                },
-                parentAction: ParentAction.NO_RESPONSE
+                }
               }
             });
 
@@ -86,21 +67,9 @@ export async function POST(request: Request) {
                 }
               });
 
-              // Send notification
-              await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  studentId: student.id,
-                  type: AlertType.EMAIL
-                }),
-              });
-
               results.push({
                 student: student.fullName,
-                action: "Message alert created and notification sent"
+                action: "Message alert created"
               });
             }
 
@@ -130,13 +99,10 @@ export async function POST(request: Request) {
       results
     });
   } catch (error) {
-    console.error("Cron job error:", error);
+    console.error("Attendance check error:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Unknown error occurred" 
-      }, 
-      { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 500 }
+      { success: false, error: "Failed to check attendance" },
+      { status: 500 }
     );
   }
 }
