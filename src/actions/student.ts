@@ -12,7 +12,7 @@ export async function getStudents(kindergartenId: string) {
         class: true,
         attendance: {
           orderBy: {
-            date: 'desc',
+            date: "desc",
           },
           take: 30, // Last 30 days
         },

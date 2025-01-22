@@ -1,5 +1,5 @@
 // next.config.mjs
-/** @type {import('next').NextConfig} */
+/** @type {import("next").NextConfig} */
 const nextConfig = {
   output: "standalone",
   experimental: {
@@ -33,9 +33,9 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '*.amazonaws.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "*.amazonaws.com",
+        pathname: "/**",
       }
     ],
   },

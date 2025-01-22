@@ -27,7 +27,7 @@ export const getAlerts = async (kindergartenId: string, userType: UserType) => {
         ]
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc"
       }
     });
 
