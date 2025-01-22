@@ -42,7 +42,6 @@ model Class {
   id             String       @id @default(uuid())
   name           String
   capacity       Int
-  description    String?
   kindergartenId String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -284,10 +283,10 @@ enum EventType {
 }
 
 enum UserType {
-  ADMIN
-  TEACHER
-  PARENT
   ALL
+  PARENT
+  TEACHER
+  ADMIN
   STUDENT
 }
 

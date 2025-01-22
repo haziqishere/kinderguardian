@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ClassList } from "./_components/class-list";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -22,7 +22,7 @@ export default function ClassesPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchClasses = useCallback(async () => {
+  const fetchClasses = async () => {
     setLoading(true);
     const result = await getClasses(params.orgId as string);
     if (result.error) {
@@ -31,12 +31,12 @@ export default function ClassesPage() {
       setClasses(result.data || []);
     }
     setLoading(false);
-  }, [params.orgId]);
+  };
 
   // Initial fetch
   useEffect(() => {
     fetchClasses();
-  }, [fetchClasses]);
+  }, [params.orgId]);
 
   const handleDelete = async (id: string) => {
     const result = await deleteClass(id);

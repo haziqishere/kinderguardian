@@ -1,19 +1,8 @@
 // next.config.mjs
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  output: "standalone",
-  experimental: {
-    optimizeCss: true,
-  },
-  poweredByHeader: false,
-  compress: true,
-
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.optimization = {
-        ...config.optimization,
-        minimize: true,
-      }
       config.resolve.fallback = {
         ...config.resolve.fallback,
         stream: false,
@@ -50,7 +39,6 @@ const nextConfig = {
           { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,DELETE,OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
-          { key: "Cache-Control", value: "no-store"},
         ]
       }
     ];
