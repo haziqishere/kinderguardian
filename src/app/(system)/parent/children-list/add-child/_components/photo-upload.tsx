@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import Webcam from "react-webcam";
-import { Camera, Paperclip, X } from "lucide-react";
+import { Camera, Paperclip, X, SwitchCamera } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -91,12 +91,32 @@ export const PhotoUpload = ({
 }: PhotoUploadProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const webcamRef = useRef<Webcam>(null);
 
   const videoConstraints = {
-    width: 1280,
-    height: 720,
-    facingMode: "user",
+    width: { min: 720, ideal: 1280, max: 1920 },
+    height: { min: 480, ideal: 720, max: 1080 },
+    facingMode,
+    aspectRatio: 4 / 3,
+  };
+
+  const toggleCamera = () => {
+    setCameraError(null);
+    setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
+  };
+
+  const handleUserMedia = () => {
+    setCameraError(null);
+  };
+
+  const handleCameraError = (error: string | DOMException) => {
+    console.error("Camera Error:", error);
+    setCameraError(
+      "Unable to access camera. Please check permissions and try again."
+    );
+    toast.error("Camera access failed. Please check permissions.");
   };
 
   const capturePhoto = () => {
@@ -232,57 +252,81 @@ export const PhotoUpload = ({
             </DialogTitle>
           </DialogHeader>
           <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              screenshotFormat="image/jpeg"
-              videoConstraints={videoConstraints}
-              className="w-full h-full object-cover"
-            />
+            {cameraError ? (
+              <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4">
+                <p>{cameraError}</p>
+              </div>
+            ) : (
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                videoConstraints={videoConstraints}
+                onUserMedia={handleUserMedia}
+                onUserMediaError={handleCameraError}
+                className="w-full h-full object-cover"
+              />
+            )}
 
             {/*TODO: Redesign Face Guidelines Overlay*/}
             <div className="absolute inset-0 pointer-events-none">
-              <div className="w-full h-full border-2 border-dashed border-white/50">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  {/* Consistent circle guide for all angles */}
-                  <div className="w-48 h-48 border-2 border-white/50 rounded-full" />
-
-                  {/* Directional Arrows */}
-                  {type === "left" && (
-                    <div className="absolute -left-16 top-1/2 transform -translate-y-1/2">
-                      <Arrow direction="left" />
-                    </div>
-                  )}
-                  {type === "right" && (
-                    <div className="absolute -right-16 top-1/2 transform -translate-y-1/2">
-                      <Arrow direction="right" />
-                    </div>
-                  )}
-                  {type === "tiltUp" && (
-                    <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
-                      <Arrow direction="up" />
-                    </div>
-                  )}
-                  {type === "tiltDown" && (
-                    <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
-                      <Arrow direction="down" />
-                    </div>
-                  )}
-
-                  {/* Text Direction Guide */}
-                  <div className="absolute -bottom-24 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                    {type === "left" && "Look Left"}
-                    {type === "right" && "Look Right"}
-                    {type === "tiltUp" && "Tilt Up"}
-                    {type === "tiltDown" && "Tilt Down"}
+              {!cameraError && (
+                <>
+                  {/* Camera Switch Button - Not pointer-events-none */}
+                  <div className="absolute bottom-4 left-4 pointer-events-auto z-10">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={toggleCamera}
+                      className="bg-black/50 hover:bg-black/70 border-white/10 transition-colors"
+                      title="Switch Camera"
+                    >
+                      <SwitchCamera className="h-5 w-5 text-white" />
+                    </Button>
                   </div>
-                </div>
-              </div>
+                  <div className="w-full h-full border-2 border-dashed border-white/50">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                      {/* Consistent circle guide for all angles */}
+                      <div className="w-48 h-48 border-2 border-white/50 rounded-full" />
 
-              {/* Instructions Banner */}
-              <div className="absolute top-4 left-4 right-4 text-white text-sm text-center bg-black/50 p-2 rounded">
-                {getPositionInstructions(type)}
-              </div>
+                      {/* Directional Arrows */}
+                      {type === "left" && (
+                        <div className="absolute -left-16 top-1/2 transform -translate-y-1/2">
+                          <Arrow direction="left" />
+                        </div>
+                      )}
+                      {type === "right" && (
+                        <div className="absolute -right-16 top-1/2 transform -translate-y-1/2">
+                          <Arrow direction="right" />
+                        </div>
+                      )}
+                      {type === "tiltUp" && (
+                        <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
+                          <Arrow direction="up" />
+                        </div>
+                      )}
+                      {type === "tiltDown" && (
+                        <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
+                          <Arrow direction="down" />
+                        </div>
+                      )}
+
+                      {/* Text Direction Guide */}
+                      <div className="absolute -bottom-24 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                        {type === "left" && "Look Left"}
+                        {type === "right" && "Look Right"}
+                        {type === "tiltUp" && "Tilt Up"}
+                        {type === "tiltDown" && "Tilt Down"}
+                      </div>
+                    </div>
+
+                    {/* Instructions Banner */}
+                    <div className="absolute top-4 left-4 right-4 text-white text-sm text-center bg-black/50 p-2 rounded">
+                      {getPositionInstructions(type)}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="flex justify-end space-x-2 mt-4">
