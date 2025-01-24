@@ -131,12 +131,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/node_modules ./n
 RUN chown -R nextjs:nodejs .
 RUN chown -R nextjs:nodejs /var/log/cron
 
-USER nextjs
+# Important: Don't switch to nextjs user here
+# USER nextjs  <- Remove or comment this line
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Change the CMD to run both cron and Next.js
-CMD crond && node server.js
+# Run as root
+CMD crond && su -s /bin/sh nextjs -c "node server.js"
