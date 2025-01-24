@@ -44,6 +44,7 @@
     "cron": "^3.5.0",
     "crypto-browserify": "^3.12.1",
     "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.2.0",
     "embla-carousel-auto-scroll": "^8.3.1",
     "embla-carousel-react": "^8.3.1",
     "firebase": "^11.1.0",

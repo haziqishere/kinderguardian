@@ -2,7 +2,7 @@
 import { db } from "@/lib/db";
 import { DayOfWeek, AttendanceStatus, AlertType } from "@prisma/client";
 import { format, parse, isWithinInterval, parseISO } from "date-fns";
-import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz'
+import { toZonedTime } from 'date-fns-tz'
 
 async function isHoliday(kindergartenId: string, date: Date) {
   const holiday = await db.holiday.findFirst({
@@ -174,7 +174,7 @@ export class AttendanceScheduler {
       // Get current time in Malaysia timezone
       const timeZone = 'Asia/Kuala_Lumpur'
       const utcNow = new Date()
-      const now = utcToZonedTime(utcNow, timeZone)
+      const now = toZonedTime(utcNow, timeZone)
       const currentDay = format(now, 'EEEE').toUpperCase() as DayOfWeek
       
       console.log('Starting attendance check...')
@@ -219,7 +219,7 @@ export class AttendanceScheduler {
         // Convert threshold time to Malaysia timezone
         const thresholdTime = kindergarten.messageAlertThreshold
         const today = new Date(now)
-        const messageThreshold = utcToZonedTime(
+        const messageThreshold = toZonedTime(
           new Date(today.setHours(
             thresholdTime.getHours(),
             thresholdTime.getMinutes(),
