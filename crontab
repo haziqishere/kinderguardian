@@ -1,5 +1,5 @@
-# Run attendance check every 5 minutes during working hours (6 AM - 6 PM)
-*/5 6-18 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/attendance-check -H "Authorization: Bearer ${CRON_SECRET_KEY}" >> /var/log/cron/alerts.log 2>&1
+# Run attendance check every 5 minutes during working hours (6 AM - 6 PM Malaysia time = 22:00-10:00 UTC)
+*/5 22-23,0-10 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/attendance-check -H "Authorization: Bearer ${CRON_SECRET_KEY}" >> /var/log/cron/alerts.log 2>&1
 
-# Run daily report at 11:59 PM
-59 23 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/daily-report -H "Authorization: Bearer ${CRON_SECRET_KEY}" >> /var/log/cron/alerts.log 2>&1
+# Run daily report at 11:59 PM Malaysia time = 15:59 UTC
+59 15 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/daily-report -H "Authorization: Bearer ${CRON_SECRET_KEY}" >> /var/log/cron/alerts.log 2>&1
