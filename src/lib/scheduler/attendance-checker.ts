@@ -1,7 +1,8 @@
 // src/lib/scheduler/attendance-check.ts
 import { db } from "@/lib/db";
 import { DayOfWeek, AttendanceStatus, AlertType } from "@prisma/client";
-import { format, parse, isWithinInterval } from "date-fns";
+import { format, parse, isWithinInterval, parseISO } from "date-fns";
+import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz'
 
 async function isHoliday(kindergartenId: string, date: Date) {
   const holiday = await db.holiday.findFirst({
@@ -170,11 +171,16 @@ export class AttendanceScheduler {
   // Modified checkAttendance to only alert for PENDING status
   static async checkAttendance() {
     try {
-      const now = new Date();
-      const currentDay = format(now, 'EEEE').toUpperCase() as DayOfWeek;
+      // Get current time in Malaysia timezone
+      const timeZone = 'Asia/Kuala_Lumpur'
+      const utcNow = new Date()
+      const now = utcToZonedTime(utcNow, timeZone)
+      const currentDay = format(now, 'EEEE').toUpperCase() as DayOfWeek
       
-      console.log('Starting attendance check at:', format(now, 'HH:mm:ss'));
-      console.log('Current day:', currentDay);
+      console.log('Starting attendance check...')
+      console.log('UTC time:', format(utcNow, 'HH:mm:ss'))
+      console.log('Malaysia time:', format(now, 'HH:mm:ss'))
+      console.log('Current day:', currentDay)
       
       const kindergartens = await db.kindergarten.findMany({
         include: {
@@ -186,14 +192,14 @@ export class AttendanceScheduler {
                   attendance: {
                     where: {
                       date: {
-                        equals: new Date(now.setHours(0, 0, 0, 0))
+                        equals: new Date(now.getFullYear(), now.getMonth(), now.getDate())
                       }
                     }
                   },
                   alertLogs: {
                     where: {
                       alertTime: {
-                        gte: new Date(now.setHours(0, 0, 0, 0))
+                        gte: new Date(now.getFullYear(), now.getMonth(), now.getDate())
                       }
                     },
                     orderBy: {
@@ -210,67 +216,75 @@ export class AttendanceScheduler {
       for (const kindergarten of kindergartens) {
         console.log(`\nProcessing kindergarten: ${kindergarten.name}`);
         
-        // Get message and call thresholds
-        const messageThreshold = parse(
-          format(kindergarten.messageAlertThreshold, 'HH:mm:ss'),
-          'HH:mm:ss',
-          now
-        );
+        // Convert threshold time to Malaysia timezone
+        const thresholdTime = kindergarten.messageAlertThreshold
+        const today = new Date(now)
+        const messageThreshold = utcToZonedTime(
+          new Date(today.setHours(
+            thresholdTime.getHours(),
+            thresholdTime.getMinutes(),
+            thresholdTime.getSeconds()
+          )),
+          timeZone
+        )
         
-        console.log('Message threshold:', format(messageThreshold, 'HH:mm:ss'));
-        console.log('Current time:', format(now, 'HH:mm:ss'));
-        console.log('Is past threshold:', now >= messageThreshold);
+        console.log('Message threshold (MY):', format(messageThreshold, 'HH:mm:ss'))
+        console.log('Current time (MY):', format(now, 'HH:mm:ss'))
+        console.log('Is past threshold:', now >= messageThreshold)
 
         // Process students
         for (const class_ of kindergarten.classes) {
-          console.log(`\nChecking class: ${class_.name}`);
+          console.log(`\nChecking class: ${class_.name}`)
           
           for (const student of class_.students) {
-            console.log(`\nStudent: ${student.fullName}`);
+            console.log(`\nStudent: ${student.fullName}`)
             
-            // Only check students with PENDING status
-            const todayAttendance = student.attendance.find(a => 
-              a.status === AttendanceStatus.PENDING
-            );
-            
-            if (!todayAttendance) {
-              console.log('No PENDING attendance found - skipping');
-              continue;
+            const todayAttendance = student.attendance[0]
+            if (!todayAttendance || todayAttendance.status !== 'PENDING') {
+              console.log('No PENDING attendance found - skipping')
+              continue
             }
             
-            console.log('Attendance status:', todayAttendance.status);
+            console.log('Attendance status:', todayAttendance.status)
             
-            const lastAlert = student.alertLogs[0];
-            console.log('Last alert:', lastAlert ? format(lastAlert.alertTime, 'HH:mm:ss') : 'None');
+            const lastAlert = student.alertLogs[0]
+            console.log('Last alert:', lastAlert ? format(lastAlert.alertTime, 'HH:mm:ss') : 'None')
 
-            // Send alerts only for PENDING status
+            // Send alerts only for PENDING status after threshold
             if (now >= messageThreshold && !lastAlert) {
-              console.log('Sending message alert...');
-              await fetch(
-                `${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    studentId: student.id,
-                    type: AlertType.EMAIL
-                  })
-                }
-              );
-              console.log('Alert sent successfully');
+              console.log('Sending message alert...')
+              try {
+                const response = await fetch(
+                  `${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      studentId: student.id,
+                      type: AlertType.EMAIL
+                    })
+                  }
+                )
+                const result = await response.json()
+                console.log('Alert response:', result)
+              } catch (error) {
+                console.error('Failed to send alert:', error)
+              }
             } else {
               console.log('Skipping alert:', {
+                currentTime: format(now, 'HH:mm:ss'),
+                thresholdTime: format(messageThreshold, 'HH:mm:ss'),
                 isPastThreshold: now >= messageThreshold,
                 hasNoPreviousAlert: !lastAlert
-              });
+              })
             }
           }
         }
       }
       
-      console.log('\nAttendance check completed');
+      console.log('\nAttendance check completed')
     } catch (error) {
-      console.error("Attendance check error:", error);
+      console.error("Attendance check error:", error)
     }
   }
 }
