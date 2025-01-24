@@ -255,16 +255,16 @@ export class AttendanceScheduler {
               console.log('Sending message alert...')
               try {
                 const response = await fetch(
-                  `${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`,
+                  `${process.env.NEXT_PUBLIC_APP_URL}/api/test/emailAlert?studentId=${student.id}`,
                   {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      studentId: student.id,
-                      type: AlertType.EMAIL
-                    })
+                    method: 'GET'
                   }
                 )
+                
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`)
+                }
+                
                 const result = await response.json()
                 console.log('Alert response:', result)
               } catch (error) {
