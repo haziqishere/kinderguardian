@@ -1,4 +1,4 @@
-# Initialize attendance records at 6 AM Malaysia time (22:00 UTC)
+<!-- # Initialize attendance records at 6 AM Malaysia time (22:00 UTC)
 0 22 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/initialize-attendance >> /var/log/cron/alerts.log 2>&1
 
 # Run attendance check every 5 minutes during ALL hours (for testing)
@@ -8,4 +8,4 @@
 0 10 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/finalize-attendance >> /var/log/cron/alerts.log 2>&1
 
 # Run daily report at 11:59 PM Malaysia time (15:59 UTC)
-59 15 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/daily-report >> /var/log/cron/alerts.log 2>&1
+59 15 * * * curl -X POST https://sea-lion-app-o24bm.ondigitalocean.app/api/cron/daily-report >> /var/log/cron/alerts.log 2>&1 -->
